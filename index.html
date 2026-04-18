@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>نظام الرصد اليومي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #F4EFE6;
+    --bg-2: #EBE5D5;
+    --card: #FFFFFF;
+    --card-2: #FBF7EE;
+    --ink: #1A1A1A;
+    --ink-soft: #2D2D2D;
+    --muted: #6B6B6B;
+    --line: rgba(0,0,0,0.08);
+    --line-strong: rgba(0,0,0,0.15);
+    --accent: #C2410C;
+    --accent-soft: rgba(194, 65, 12, 0.10);
+    --amber: #D97706;
+    --amber-soft: rgba(217, 119, 6, 0.12);
+    --danger: #B91C1C;
+    --danger-soft: rgba(185, 28, 28, 0.10);
+    --ok: #15803D;
+    --orange: #C2410C;
+    --orange-bright: #EA580C;
+    --orange-soft: rgba(194, 65, 12, 0.10);
+    --orange-darker: #9A3412;
+    --fb-blue: #1877f2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Tajawal', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ========== HEADER ========== */
+  header.app-header {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 20px 0;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .header-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .logo { font-size: 1.8rem; background: var(--accent-soft); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(194,65,12,0.25); }
+  .brand-title { font-size: 1.15rem; font-weight: 900; color: var(--orange); line-height: 1.2; }
+  .brand-sub { font-size: 0.85rem; color: var(--muted); }
+  .badge-mode { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(217,119,6,0.30); padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+  .tabs { display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab-btn { background: transparent; color: var(--ink-soft); border: none; padding: 12px 18px; cursor: pointer; font-family: inherit; font-size: 0.95rem; font-weight: 600; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; border-radius: 0; }
+  .tab-btn:hover { color: var(--orange); background: var(--accent-soft); }
+  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); background: var(--accent-soft); }
+
+  /* ========== VIEWER BAR (for shared links) ========== */
+  .viewer-bar {
+    background: var(--card); border-bottom: 1px solid var(--line);
+    padding: 14px 16px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .viewer-bar-inner {
+    max-width: 880px; margin: 0 auto;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .viewer-bar-inner label { font-weight: 700; color: var(--ink); flex-shrink: 0; }
+  .viewer-bar-inner select { flex: 1; min-width: 160px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink); font-family: inherit; font-size: 1rem; }
+  .viewer-bar-inner select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(194,65,12,0.18); }
+  .viewer-bar-inner .vb-btn { background: var(--orange); color: #fff; border: 1px solid var(--orange-darker); padding: 10px 16px; font-weight: 700; font-family: inherit; font-size: 0.92rem; cursor: pointer; border-radius: 10px; transition: all 0.15s; }
+  .viewer-bar-inner .vb-btn:hover { background: var(--orange-bright); }
+  .viewer-bar-inner .vb-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; }
+  .viewer-bar-inner .vb-link:hover { color: var(--orange); }
+
+  /* ========== MAIN & PANELS ========== */
+  main { max-width: 980px; margin: 0 auto; padding: 22px 16px 80px; }
+  main.viewer-main { max-width: 880px; }
+  .tab-panel { display: none; animation: fadeIn 0.35s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ========== CARDS ========== */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+  .card h2 { margin: 0 0 14px; font-size: 1.1rem; color: var(--orange); font-weight: 800; display: flex; align-items: center; gap: 10px; }
+  .hint { color: var(--muted); font-size: 0.88rem; margin: 0 0 14px; }
+
+  /* ========== FORM ELEMENTS ========== */
+  input[type="date"], input[type="text"], input[type="url"], input[type="password"], textarea, select {
+    width: 100%; padding: 11px 14px; background: #FFFFFF; border: 1px solid var(--line-strong);
+    border-radius: 10px; color: var(--ink); font-family: inherit; font-size: 1rem; transition: all 0.15s;
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(194,65,12,0.18); }
+  input[type="date"] { color-scheme: light; }
+  textarea { min-height: 60px; resize: vertical; }
+  .item-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+  .item-row textarea { flex: 1; }
+  .link-row { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 8px; margin-bottom: 10px; }
+  @media (max-width: 600px) { .link-row { grid-template-columns: 1fr; } }
+
+  /* ========== BUTTONS ========== */
+  button { cursor: pointer; font-family: inherit; border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.95rem; transition: all 0.15s; }
+  .btn-add { background: var(--orange-soft); color: var(--orange); border: 1px solid rgba(194,65,12,0.30); margin-top: 4px; font-weight: 700; }
+  .btn-add:hover { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .btn-remove { background: var(--danger-soft); color: var(--danger); padding: 8px 14px; flex-shrink: 0; border: 1px solid rgba(185,28,28,0.25); }
+  .btn-remove:hover { background: var(--danger); color: #fff; }
+  .btn-primary { background: var(--orange); color: #fff; border: 1px solid var(--orange-darker); padding: 10px 18px; font-weight: 700; }
+  .btn-primary:hover:not(:disabled) { background: var(--orange-bright); box-shadow: 0 4px 12px rgba(194,65,12,0.30); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--card-2); color: var(--ink); border: 1px solid var(--line-strong); padding: 10px 16px; font-weight: 600; }
+  .btn-secondary:hover { background: var(--orange-soft); color: var(--orange); border-color: var(--orange); }
+  .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ========== ICONS ========== */
+  .ico { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
+  .ico svg { width: 18px; height: 18px; }
+  .ico.ico-x { background: #000; color: #fff; border: 1px solid rgba(0,0,0,0.15); }
+  .ico.ico-fb { background: var(--fb-blue); color: #fff; }
+  .ico.ico-warn { background: var(--amber-soft); color: var(--amber); font-size: 1.1rem; }
+  .ico.ico-orange { background: var(--orange-soft); color: var(--orange); font-size: 1.05rem; }
+
+  /* ========== ACTIONS BAR ========== */
+  .actions-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 600px) { .actions-bar { grid-template-columns: 1fr; } }
+  .btn-archive, .btn-publish { padding: 14px 22px; font-weight: 700; font-size: 1.02rem; border: 1px solid transparent; }
+  .btn-archive { background: var(--card-2); color: var(--ink); border-color: var(--line-strong); }
+  .btn-archive:hover { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .btn-archive.done { background: rgba(21,128,61,0.12); color: var(--ok); border-color: rgba(21,128,61,0.35); }
+  .btn-publish { background: var(--orange); color: #fff; border-color: var(--orange-darker); }
+  .btn-publish:hover:not(:disabled) { background: var(--orange-bright); box-shadow: 0 6px 18px rgba(194,65,12,0.30); }
+  .btn-publish:disabled { background: rgba(194,65,12,0.18); color: rgba(154,52,18,0.5); cursor: not-allowed; border-color: transparent; }
+  .btn-new { background: var(--card-2); color: var(--ink-soft); border: 1px solid var(--line-strong); padding: 14px 22px; font-weight: 700; font-size: 1rem; width: 100%; margin-top: 14px; }
+  .btn-new:hover { background: var(--danger-soft); color: var(--danger); border-color: rgba(185,28,28,0.35); }
+  .step-hint { text-align: center; color: var(--muted); font-size: 0.88rem; margin: 14px 0 0; }
+
+  /* ========== TOAST ========== */
+  .toast { position: fixed; top: 88px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--ok); color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.20); font-weight: 700; z-index: 1000; opacity: 0; transition: all 0.3s; pointer-events: none; max-width: 90%; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--danger); color: #fff; }
+
+  /* ========== VIEWER IDENTITY (report display) ========== */
+  .viewer-identity .viewer-controls { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .viewer-identity .viewer-controls label { font-weight: 700; color: var(--ink); flex-shrink: 0; }
+  .viewer-identity .viewer-controls select { flex: 1; min-width: 180px; }
+  .viewer-identity .viewer-controls select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(194,65,12,0.18); }
+  .viewer-identity .copy-btn { background: var(--orange); color: #fff; border: 1px solid var(--orange-darker); padding: 10px 16px; font-weight: 700; flex-shrink: 0; }
+  .viewer-identity .copy-btn:hover { background: var(--orange-bright); box-shadow: 0 4px 12px rgba(194,65,12,0.30); }
+
+  .report-header { text-align: center; padding: 30px 18px; margin-bottom: 20px; background: linear-gradient(180deg, rgba(194,65,12,0.10) 0%, rgba(194,65,12,0.02) 100%); border: 1px solid var(--line); border-top: 3px solid var(--orange); border-radius: 16px; }
+  .report-title { margin: 0 0 10px; font-size: clamp(1.4rem, 4vw, 1.9rem); font-weight: 900; color: var(--orange); letter-spacing: 0.5px; }
+  .report-date { color: var(--orange-darker); font-size: clamp(1rem, 2.6vw, 1.2rem); font-weight: 700; }
+
+  .section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin-bottom: 16px; opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .section.visible { opacity: 1; transform: translateY(0); }
+  .section h2 { margin: 0 0 16px; font-size: 1.1rem; color: var(--orange); font-weight: 800; display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+
+  .text-list { list-style: none; padding: 0; margin: 0; }
+  .text-list li { padding: 14px 18px; background: var(--card-2); border-right: 3px solid var(--orange); border-radius: 6px; margin-bottom: 10px; color: var(--ink); white-space: pre-wrap; word-wrap: break-word; text-align: justify; text-justify: inter-word; line-height: 1.9; }
+
+  .link-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 700px) { .link-grid.two-col { grid-template-columns: 1fr 1fr; } }
+  .link-card { display: block; background: var(--card-2); border: 1px solid var(--line); border-right: 3px solid var(--orange); border-radius: 12px; padding: 14px 16px; text-decoration: none; color: var(--ink); transition: all 0.2s; }
+  .link-card:hover { background: var(--orange-soft); border-color: var(--orange); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(194,65,12,0.15); }
+  .link-card .lc-title { font-weight: 800; color: var(--orange); margin-bottom: 6px; line-height: 1.6; text-align: justify; }
+  .link-card .lc-url { font-size: 0.82rem; color: var(--orange-darker); direction: ltr; text-align: right; word-break: break-all; }
+
+  .platform-list { display: flex; flex-direction: column; gap: 14px; }
+  .platform-card { background: var(--card-2); border: 1px solid var(--line); border-right: 4px solid var(--orange); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+  .platform-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; align-self: flex-start; font-size: 0.82rem; font-weight: 700; color: #fff; }
+  .platform-badge svg { width: 16px; height: 16px; }
+  .platform-card.platform-x .platform-badge { background: #000; border: 1px solid rgba(0,0,0,0.15); }
+  .platform-card.platform-fb .platform-badge { background: var(--fb-blue); }
+  .platform-text { color: var(--ink); margin: 0; line-height: 1.95; text-align: justify; text-justify: inter-word; white-space: pre-wrap; word-wrap: break-word; font-size: 1.02rem; }
+  .platform-link { display: inline-flex; align-items: center; gap: 6px; background: var(--orange); color: #fff; padding: 6px 12px; border-radius: 7px; text-decoration: none; font-weight: 600; font-size: 0.82rem; line-height: 1.2; align-self: flex-start; transition: all 0.2s; border: 1px solid var(--orange-darker); }
+  .platform-link svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .platform-link:hover { background: var(--orange-bright); box-shadow: 0 3px 10px rgba(194,65,12,0.30); transform: translateY(-1px); }
+
+  .section-note { background: var(--amber-soft); border: 1px solid rgba(217,119,6,0.30); border-right: 3px solid var(--amber); border-radius: 8px; padding: 10px 14px; color: var(--ink-soft); font-size: 0.92rem; margin: 0 0 16px; }
+  .report-footer { text-align: center; padding: 26px 16px; margin-top: 26px; background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--orange); border-radius: 14px; color: var(--orange); font-weight: 800; font-size: 1.08rem; letter-spacing: 0.5px; }
+  .empty { color: var(--muted); font-style: italic; padding: 12px 0; text-align: center; }
+  .no-report { text-align: center; padding: 60px 20px; color: var(--muted); background: var(--card); border: 1px dashed var(--line-strong); border-radius: 14px; }
+  .no-report .big { font-size: 4rem; margin-bottom: 12px; opacity: 0.6; }
+  .no-report h2 { color: var(--ink); margin: 0 0 8px; }
+
+  /* ========== ARCHIVE ========== */
+  .month-block { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .month-block h2 { margin: 0 0 12px; font-size: 1.08rem; color: var(--orange); font-weight: 800; padding-bottom: 10px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .month-block .count { background: var(--orange-soft); color: var(--orange); font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; font-weight: 700; }
+  .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .day-card { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 10px; color: var(--ink); transition: all 0.2s; min-height: 80px; cursor: pointer; }
+  .day-card:hover { background: var(--orange-soft); border-color: var(--orange); transform: translateY(-2px); }
+  .day-card .day-num { font-size: 1.5rem; font-weight: 900; color: var(--orange); line-height: 1.1; }
+  .day-card .day-name { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+  .day-card .day-delete { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; padding: 0; line-height: 1; border-radius: 50%; background: var(--danger-soft); color: var(--danger); border: none; font-size: 0.95rem; opacity: 0; transition: opacity 0.15s; }
+  .day-card:hover .day-delete { opacity: 1; }
+  .day-card .day-delete:hover { background: var(--danger); color: #fff; }
+  .archive-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .archive-actions button { background: var(--card); color: var(--ink-soft); border: 1px solid var(--line-strong); padding: 8px 14px; font-size: 0.88rem; }
+  .archive-actions button:hover { background: var(--orange-soft); color: var(--orange); border-color: var(--orange); }
+  .storage-info { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; color: var(--muted); font-size: 0.85rem; }
+  .storage-info strong { color: var(--orange); }
+
+  /* ========== SETTINGS ========== */
+  .settings-label { display: block; margin-bottom: 6px; color: var(--ink-soft); font-weight: 700; font-size: 0.92rem; }
+  .settings-input { width: 100%; padding: 11px 14px; background: #FFFFFF; border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink); font-family: inherit; font-size: 0.95rem; direction: ltr; text-align: left; }
+  .settings-input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(194,65,12,0.18); }
+  .settings-group { margin-bottom: 14px; }
+  .guide { padding: 14px 18px; margin-top: 10px; background: var(--orange-soft); border: 1px solid rgba(194,65,12,0.20); border-radius: 10px; font-size: 0.92rem; color: var(--ink-soft); }
+  .guide h4 { color: var(--orange); margin: 14px 0 8px; font-size: 0.98rem; font-weight: 800; }
+  .guide h4:first-child { margin-top: 0; }
+  .guide ol, .guide ul { padding-right: 22px; margin: 6px 0; }
+  .guide li { margin-bottom: 5px; line-height: 1.7; }
+  .guide a { color: var(--orange); text-decoration: underline; }
+  .guide code { background: rgba(0,0,0,0.06); color: var(--ink); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; direction: ltr; display: inline-block; border: 1px solid var(--line); }
+  details summary { cursor: pointer; font-weight: 700; padding: 10px 14px; background: var(--orange-soft); color: var(--orange); border-radius: 10px; user-select: none; border: 1px solid rgba(194,65,12,0.25); }
+  details[open] summary { margin-bottom: 8px; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "◀ "; font-size: 0.8em; }
+  details[open] summary::before { content: "▼ "; }
+  .warning-box { background: var(--danger-soft); border: 1px solid rgba(185,28,28,0.28); border-right: 3px solid var(--danger); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; color: var(--ink-soft); font-size: 0.92rem; }
+  .warning-box strong { color: var(--danger); }
+  .status-box { padding: 12px 16px; border-radius: 10px; margin: 14px 0; font-size: 0.93rem; border: 1px solid var(--line-strong); background: var(--card-2); color: var(--ink-soft); }
+  .status-box.ok { background: rgba(21,128,61,0.10); border-color: rgba(21,128,61,0.30); color: var(--ok); }
+  .status-box.err { background: var(--danger-soft); border-color: rgba(185,28,28,0.30); color: var(--danger); }
+
+  footer.app-footer { text-align: center; color: var(--muted); padding: 24px 16px; font-size: 0.85rem; border-top: 1px solid var(--line); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<!-- ========== ADMIN HEADER ========== -->
+<header class="app-header" id="admin-header">
+  <div class="header-top">
+    <div class="brand">
+      <span class="logo">📊</span>
+      <div>
+        <div class="brand-title">نظام الرصد اليومي</div>
+        <div class="brand-sub">لوحة الإدارة الموحدة</div>
+      </div>
+    </div>
+    <span class="badge-mode" id="storage-badge">💾 تخزين محلي</span>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="input">📝 إدخال البيانات</button>
+    <button class="tab-btn" data-tab="viewer">📺 عرض التقرير</button>
+    <button class="tab-btn" data-tab="archive">📚 الأرشيف</button>
+    <button class="tab-btn" data-tab="settings">⚙️ الإعدادات</button>
+  </nav>
+</header>
+
+<!-- ========== VIEWER BAR (for shared links, hidden by default) ========== -->
+<div class="viewer-bar" id="viewer-bar" style="display:none">
+  <div class="viewer-bar-inner">
+    <label>📅 تقرير الرصد:</label>
+    <select id="vb-date-select"></select>
+    <button class="vb-btn" id="vb-copy-btn">🔗 نسخ الرابط</button>
+    <a class="vb-link" href="?" id="vb-admin-link">⚙️ لوحة الإدارة</a>
+  </div>
+</div>
+
+<!-- ========== TOAST ========== -->
+<div id="toast" class="toast"></div>
+
+<!-- ========== ADMIN MAIN ========== -->
+<main id="admin-main">
+
+  <!-- INPUT TAB -->
+  <section class="tab-panel active" id="tab-input">
+    <div class="card">
+      <h2><span class="ico ico-orange">📅</span>تاريخ التقرير</h2>
+      <p class="hint">اختر أي تاريخ (يدعم الرفع بأثر رجعي). التقارير المحفوظة لنفس التاريخ يتم تحميلها للتعديل.</p>
+      <input type="date" id="report_date" />
+    </div>
+
+    <div class="card">
+      <h2><span class="ico ico-x" id="h-ico-1"></span>أبرز سرديات الخصوم على منصة X</h2>
+      <div id="twitter_list"></div>
+      <button type="button" class="btn-add" data-add="twitter">+ إضافة سردية</button>
+    </div>
+
+    <div class="card">
+      <h2><span class="ico ico-fb" id="h-ico-2"></span>أبرز ما يتداول في مجموعات فيسبوك المحلية</h2>
+      <div id="facebook_list"></div>
+      <button type="button" class="btn-add" data-add="facebook">+ إضافة منشور</button>
+    </div>
+
+    <div class="card">
+      <h2><span class="ico ico-warn">⚠️</span>منشورات تحريضية</h2>
+      <p class="hint">العنوان والرابط لكل منشور.</p>
+      <div id="incitement_list"></div>
+      <button type="button" class="btn-add" data-add="incitement">+ إضافة منشور</button>
+    </div>
+
+    <div class="card">
+      <h2><span class="ico ico-x" id="h-ico-3"></span>تغريدات استدلالية</h2>
+      <p class="hint">العنوان (نص التغريدة أو شرحها) والرابط.</p>
+      <div id="hostile_list"></div>
+      <button type="button" class="btn-add" data-add="hostile">+ إضافة تغريدة</button>
+    </div>
+
+    <div class="card">
+      <h2><span class="ico ico-fb" id="h-ico-4"></span>منشورات استدلالية من مجموعات الفيسبوك المحلية</h2>
+      <p class="hint">في حال لم يظهر لك المنشور عند الضغط عليه فقد تكون المجموعة مغلقة وتتطلب الإشتراك.</p>
+      <div id="suggestive_fb_list"></div>
+      <button type="button" class="btn-add" data-add="suggestive_fb">+ إضافة منشور</button>
+    </div>
+
+    <div class="actions-bar">
+      <button type="button" class="btn-archive" id="save-archive-btn">💾 حفظ في الأرشيف</button>
+      <button type="button" class="btn-publish" id="save-publish-btn" disabled>📤 حفظ التقرير</button>
+    </div>
+    <p class="step-hint">أولاً اضغط <strong>«حفظ في الأرشيف»</strong>، ثم <strong>«حفظ التقرير»</strong> لعرضه في واجهة العرض.</p>
+    <button type="button" class="btn-new" id="new-report-btn">🆕 ابدأ تقرير جديد</button>
+  </section>
+
+  <!-- VIEWER TAB -->
+  <section class="tab-panel viewer-identity" id="tab-viewer">
+    <div class="viewer-controls">
+      <label for="viewer-date-select">📅 عرض تقرير:</label>
+      <select id="viewer-date-select"></select>
+      <button type="button" class="copy-btn" id="copy-link-btn" title="نسخ رابط مشاركة التقرير">🔗 نسخ الرابط</button>
+    </div>
+    <div id="share-mode-banner" class="status-box" style="margin-bottom:18px; font-size:0.88rem"></div>
+    <div id="viewer-content"></div>
+  </section>
+
+  <!-- ARCHIVE TAB -->
+  <section class="tab-panel" id="tab-archive">
+    <div class="storage-info" id="storage-info"></div>
+    <div class="archive-actions">
+      <button type="button" id="export-btn">📥 تصدير الأرشيف (نسخة احتياطية)</button>
+      <button type="button" id="import-btn">📤 استيراد أرشيف</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none">
+    </div>
+    <div id="archive-content"></div>
+  </section>
+
+  <!-- SETTINGS TAB -->
+  <section class="tab-panel" id="tab-settings">
+
+    <!-- Deployment URL -->
+    <div class="card">
+      <h2><span class="ico ico-orange">🌐</span>رابط النشر العام</h2>
+      <p class="hint">الرابط العام الذي سيفتحه المستلمون. يُستخدم لتكوين روابط المشاركة.</p>
+      <div id="file-protocol-warning" class="warning-box" style="display:none">
+        <strong>⚠️ تحذير:</strong> أنت تفتح التطبيق من مسار محلي <code>file:///</code>.
+        روابط المشاركة لن تعمل عند المستلم. <strong>يجب نشر الملفات على استضافة</strong> (GitHub Pages هو الأسهل — راجع قسم GitHub أدناه).
+      </div>
+      <div class="settings-group">
+        <label class="settings-label" for="deployment-url">رابط الصفحة العام:</label>
+        <input type="url" id="deployment-url" class="settings-input" placeholder="https://username.github.io/repo-name/" />
+      </div>
+      <button type="button" class="btn-primary" id="save-deployment-url">💾 حفظ الرابط</button>
+      <div id="deployment-url-preview" class="status-box" style="display:none; margin-top:12px"></div>
+    </div>
+
+    <!-- GitHub Integration -->
+    <div class="card">
+      <h2><span class="ico ico-orange">🐙</span>التخزين السحابي — GitHub (مُوصى به)</h2>
+      <p class="hint">احفظ التقارير في مستودع GitHub وشاركها بروابط قصيرة جداً تعمل فوراً بدون أي انتظار.</p>
+
+      <details style="margin-bottom:16px">
+        <summary>📖 دليل الإعداد خطوة بخطوة (اضغط للتوسيع)</summary>
+        <div class="guide">
+          <h4>١. إنشاء مستودع GitHub</h4>
+          <ol>
+            <li>سجّل دخولك في <a href="https://github.com" target="_blank">github.com</a></li>
+            <li>اضغط <strong>+</strong> → <strong>New repository</strong></li>
+            <li>سمّه مثلاً <code>rasd-daily</code> واجعله <strong>Public</strong></li>
+            <li>فعّل <strong>Add a README file</strong> ثم اضغط <strong>Create repository</strong></li>
+          </ol>
+
+          <h4>٢. تفعيل GitHub Pages</h4>
+          <ol>
+            <li>من إعدادات المستودع → <strong>Pages</strong></li>
+            <li>Source: <strong>Deploy from a branch</strong></li>
+            <li>Branch: <strong>main</strong> → مجلد <strong>/ (root)</strong></li>
+            <li>اضغط <strong>Save</strong></li>
+            <li>الرابط سيكون: <code>https://username.github.io/rasd-daily/</code></li>
+          </ol>
+
+          <h4>٣. رفع ملف index.html</h4>
+          <ol>
+            <li>من صفحة المستودع اضغط <strong>Add file</strong> → <strong>Upload files</strong></li>
+            <li>ارفع ملف <code>index.html</code> هذا</li>
+            <li>اضغط <strong>Commit changes</strong></li>
+          </ol>
+
+          <h4>٤. إنشاء رمز وصول (Token)</h4>
+          <ol>
+            <li>اذهب إلى <a href="https://github.com/settings/tokens?type=beta" target="_blank">Settings → Developer settings → Fine-grained tokens</a></li>
+            <li>اضغط <strong>Generate new token</strong></li>
+            <li>Token name: <code>rasd-daily</code></li>
+            <li>Expiration: اختر المدة المناسبة</li>
+            <li>Repository access: <strong>Only select repositories</strong> → اختر مستودع <code>rasd-daily</code></li>
+            <li>Permissions → Repository permissions → <strong>Contents: Read and write</strong></li>
+            <li>اضغط <strong>Generate token</strong> وانسخ الرمز</li>
+          </ol>
+
+          <h4>٥. أدخل البيانات أدناه</h4>
+          <p>ألصق الرمز واسم المستخدم واسم المستودع في الحقول ثم احفظ.</p>
+          <p><strong>بعد الإعداد:</strong> عند نسخ رابط التقرير سيكون قصيراً مثل:<br>
+          <code>https://username.github.io/rasd-daily/?date=2026-04-19</code></p>
+        </div>
+      </details>
+
+      <div class="settings-group">
+        <label class="settings-label" for="gh-token">رمز الوصول (Token):</label>
+        <input type="password" id="gh-token" class="settings-input" placeholder="github_pat_xxxxxxxxxxxx" />
+      </div>
+      <div class="settings-group">
+        <label class="settings-label" for="gh-owner">اسم المستخدم (Owner):</label>
+        <input type="text" id="gh-owner" class="settings-input" placeholder="username" />
+      </div>
+      <div class="settings-group">
+        <label class="settings-label" for="gh-repo">اسم المستودع (Repository):</label>
+        <input type="text" id="gh-repo" class="settings-input" placeholder="rasd-daily" />
+      </div>
+      <div class="btn-group">
+        <button type="button" class="btn-primary" id="gh-save-btn">💾 حفظ الإعدادات</button>
+        <button type="button" class="btn-secondary" id="gh-test-btn">🔗 اختبار الاتصال</button>
+      </div>
+      <div id="gh-status" class="status-box">لم يتم الإعداد بعد</div>
+
+      <div id="gh-actions" style="display:none; margin-top:16px; padding-top:16px; border-top: 1px solid var(--line)">
+        <h3 style="color:var(--orange);font-size:1rem;margin:0 0 10px">📦 المزامنة</h3>
+        <p class="hint">التقارير تُحفظ في مجلد <code>reports/</code> داخل المستودع.</p>
+        <div class="btn-group">
+          <button type="button" class="btn-secondary" id="gh-sync-up">⬆️ رفع جميع التقارير إلى GitHub</button>
+          <button type="button" class="btn-secondary" id="gh-sync-down">⬇️ تحميل التقارير من GitHub</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Google Drive -->
+    <div class="card">
+      <h2><span class="ico ico-orange">☁️</span>التخزين السحابي — جوجل درايف (بديل)</h2>
+      <p class="hint">خيار بديل يتطلب إعداد مشروع في Google Cloud.</p>
+
+      <details style="margin-bottom:16px">
+        <summary>📖 دليل الإعداد الكامل (اضغط للتوسيع)</summary>
+        <div class="guide">
+          <h4>١. إنشاء مشروع في Google Cloud</h4>
+          <ol>
+            <li>ادخل إلى <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
+            <li>أنشئ مشروعاً جديداً باسم <code>rasd-daily</code></li>
+          </ol>
+          <h4>٢. تفعيل Google Drive API</h4>
+          <ol><li>APIs &amp; Services → Library → ابحث عن <strong>Google Drive API</strong> → Enable</li></ol>
+          <h4>٣. OAuth Consent Screen</h4>
+          <ol><li>User Type: External → أضف بريدك كـ Test user</li></ol>
+          <h4>٤. إنشاء OAuth Client ID</h4>
+          <ol>
+            <li>Credentials → Create → OAuth client ID → Web application</li>
+            <li>أضف رابط موقعك في Authorized JavaScript origins</li>
+            <li>انسخ Client ID</li>
+          </ol>
+          <h4>٥. إنشاء API Key</h4>
+          <ol><li>Credentials → Create → API key → قيّده بـ Google Drive API فقط</li></ol>
+        </div>
+      </details>
+
+      <div class="settings-group">
+        <label class="settings-label" for="gdrive-client-id">OAuth Client ID:</label>
+        <input type="text" id="gdrive-client-id" class="settings-input" placeholder="xxxxxxxx.apps.googleusercontent.com" />
+      </div>
+      <div class="settings-group">
+        <label class="settings-label" for="gdrive-api-key">API Key:</label>
+        <input type="text" id="gdrive-api-key" class="settings-input" placeholder="AIzaSy..." />
+      </div>
+      <div class="btn-group">
+        <button type="button" class="btn-primary" id="gdrive-save-creds">💾 حفظ البيانات</button>
+        <button type="button" class="btn-secondary" id="gdrive-signin">🔐 تسجيل الدخول بجوجل</button>
+        <button type="button" class="btn-secondary" id="gdrive-signout" style="display:none">🚪 تسجيل الخروج</button>
+      </div>
+      <div id="gdrive-status" class="status-box">لم يتم تسجيل الدخول بعد</div>
+      <div id="gdrive-actions" style="display:none">
+        <div class="btn-group" style="margin-top:12px">
+          <button type="button" class="btn-secondary" id="gdrive-sync-up">⬆️ رفع التقارير إلى درايف</button>
+          <button type="button" class="btn-secondary" id="gdrive-sync-down">⬇️ تحميل التقارير من درايف</button>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ========== VIEWER ONLY MAIN (for shared links) ========== -->
+<main class="viewer-main" id="viewer-main" style="display:none">
+  <div id="vo-content">
+    <div class="no-report"><div class="big">⏳</div><h2>جارٍ تحميل التقرير...</h2></div>
+  </div>
+</main>
+
+<footer class="app-footer">وحدة الرصد والتحليل</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============ SVG ICONS ============
+  const X_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>';
+  const FB_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>';
+
+  document.querySelectorAll('.ico-x').forEach(function(el) { el.innerHTML = X_SVG; });
+  document.querySelectorAll('.ico-fb').forEach(function(el) { el.innerHTML = FB_SVG; });
+
+  // ============ ARABIC HELPERS ============
+  var AR_DAYS = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  var AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  var AR_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  function toAr(n) { return String(n).replace(/\d/g, function(d) { return AR_DIGITS[+d]; }); }
+  function arDate(iso) {
+    var parts = iso.split('-').map(Number), y = parts[0], m = parts[1], d = parts[2];
+    var dt = new Date(Date.UTC(y, m - 1, d));
+    return AR_DAYS[dt.getUTCDay()] + ' ' + toAr(d) + ' ' + AR_MONTHS[m - 1] + ' ' + toAr(y);
+  }
+  function dayName(iso) {
+    var parts = iso.split('-').map(Number);
+    return AR_DAYS[new Date(Date.UTC(parts[0], parts[1] - 1, parts[2])).getUTCDay()];
+  }
+
+  // ============ UTILITY ============
+  function escapeHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function shortenUrl(url) {
+    try { var u = new URL(url); var s = u.hostname.replace(/^www\./,'') + u.pathname; return s.length > 50 ? s.slice(0,47) + '…' : s; }
+    catch(e) { return url; }
+  }
+  function toast(msg, isError) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function() { t.className = 'toast'; }, 3500);
+  }
+  function copyText(text) {
+    return navigator.clipboard.writeText(text).catch(function() {
+      var ta = document.createElement('textarea'); ta.value = text;
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    });
+  }
+
+  // ============ LOCAL STORAGE ============
+  var STORAGE_KEY = 'rasd_reports_v1';
+  var PUBLISHED_KEY = 'rasd_published_date_v1';
+  var SETTINGS_KEY = 'rasd_settings_v1';
+
+  function loadAll() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; } }
+  function saveAll(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  function getReport(date) { return loadAll()[date] || null; }
+  function setReport(date, data) {
+    var all = loadAll(), existing = all[date];
+    all[date] = Object.assign({}, data, {
+      created_at: (existing && existing.created_at) || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    saveAll(all);
+  }
+  function deleteReport(date) { var all = loadAll(); delete all[date]; saveAll(all); }
+  function getPublished() { return localStorage.getItem(PUBLISHED_KEY); }
+  function setPublished(date) { localStorage.setItem(PUBLISHED_KEY, date); }
+  function listDates() { return Object.keys(loadAll()).sort().reverse(); }
+  function loadSettings() { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch(e) { return {}; } }
+  function saveSettings(patch) { var s = Object.assign({}, loadSettings(), patch); localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); return s; }
+
+  // ============ COMPRESSION (gzip + base64url) ============
+  function compressToB64Url(str) {
+    var stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+    return new Response(stream).arrayBuffer().then(function(buf) {
+      var bytes = new Uint8Array(buf), bin = '';
+      for (var i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    });
+  }
+  function b64UrlToBytes(b64) {
+    var s = b64.replace(/-/g,'+').replace(/_/g,'/');
+    while (s.length % 4) s += '=';
+    return Uint8Array.from(atob(s), function(c) { return c.charCodeAt(0); });
+  }
+  function decompressFromB64Url(b64) {
+    var bytes = b64UrlToBytes(b64);
+    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new Response(stream).arrayBuffer().then(function(buf) {
+      return new TextDecoder().decode(buf);
+    });
+  }
+
+  // ============ GITHUB API ============
+  function ghApi(path, options) {
+    var s = loadSettings();
+    if (!s.gh_token || !s.gh_owner || !s.gh_repo) return Promise.reject(new Error('إعدادات GitHub غير مكتملة'));
+    var url = 'https://api.github.com/repos/' + encodeURIComponent(s.gh_owner) + '/' + encodeURIComponent(s.gh_repo) + path;
+    var headers = Object.assign({ 'Accept': 'application/vnd.github.v3+json', 'Authorization': 'Bearer ' + s.gh_token }, (options && options.headers) || {});
+    return fetch(url, Object.assign({}, options, { headers: headers })).then(function(res) {
+      if (!res.ok) return res.text().then(function(body) { throw new Error('GitHub ' + res.status + ': ' + body.slice(0, 200)); });
+      if (res.status === 204) return null;
+      return res.json();
+    });
+  }
+
+  function ghPushReport(date) {
+    var report = getReport(date);
+    if (!report) return Promise.reject(new Error('لا يوجد تقرير'));
+    var content = btoa(unescape(encodeURIComponent(JSON.stringify(report, null, 2))));
+    var path = '/contents/reports/' + date + '.json';
+    return ghApi(path).catch(function() { return null; }).then(function(existing) {
+      var body = { message: 'تقرير ' + date, content: content };
+      if (existing && existing.sha) body.sha = existing.sha;
+      return ghApi(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    });
+  }
+
+  function ghUpdateIndex() {
+    var path = '/contents/reports/index.json';
+    return ghApi(path).catch(function() { return null; }).then(function(existing) {
+      var dates = [], sha;
+      if (existing && existing.content) {
+        try { dates = JSON.parse(atob(existing.content.replace(/\n/g, ''))); } catch(e) {}
+        sha = existing.sha;
+      }
+      var localDates = listDates();
+      var merged = Array.from(new Set(dates.concat(localDates))).sort().reverse();
+      var content = btoa(unescape(encodeURIComponent(JSON.stringify(merged))));
+      var body = { message: 'تحديث فهرس التقارير', content: content };
+      if (sha) body.sha = sha;
+      return ghApi(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    });
+  }
+
+  function ghFetchRaw(owner, repo, filePath) {
+    var url = 'https://raw.githubusercontent.com/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repo) + '/main/' + filePath;
+    return fetch(url).then(function(res) {
+      if (!res.ok) throw new Error('تعذّر التحميل: ' + res.status);
+      return res.json();
+    });
+  }
+
+  function ghListRemoteReports() {
+    return ghApi('/contents/reports').then(function(files) {
+      return files.filter(function(f) { return f.name.endsWith('.json') && f.name !== 'index.json'; })
+        .map(function(f) { return f.name.replace('.json', ''); }).sort().reverse();
+    });
+  }
+
+  function isGhConfigured() { var s = loadSettings(); return !!(s.gh_token && s.gh_owner && s.gh_repo); }
+
+  // ============ GOOGLE DRIVE API ============
+  var DRIVE_FOLDER_NAME = 'تقارير الرصد اليومي';
+  var DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+  var driveTokenClient = null, driveReady = false, driveSignedIn = false;
+
+  function setDriveStatus(msg, cls) {
+    var el = document.getElementById('gdrive-status');
+    el.textContent = msg; el.className = 'status-box' + (cls ? ' ' + cls : '');
+  }
+  function updateDriveButtons() {
+    document.getElementById('gdrive-signin').style.display = driveSignedIn ? 'none' : 'inline-flex';
+    document.getElementById('gdrive-signout').style.display = driveSignedIn ? 'inline-flex' : 'none';
+    document.getElementById('gdrive-actions').style.display = driveSignedIn ? 'block' : 'none';
+  }
+  function loadScript(src) {
+    return new Promise(function(res, rej) {
+      if (document.querySelector('script[src="' + src + '"]')) { res(); return; }
+      var s = document.createElement('script'); s.src = src; s.async = true; s.defer = true;
+      s.onload = res; s.onerror = function() { rej(new Error('فشل تحميل: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function initDriveClient() {
+    var s = loadSettings();
+    if (!s.gdrive_client_id || !s.gdrive_api_key) { setDriveStatus('⚠️ أدخل Client ID و API Key أولاً', 'err'); return Promise.resolve(false); }
+    if (window.location.protocol === 'file:') { setDriveStatus('⚠️ لا يعمل درايف من file:/// — انشر التطبيق أولاً', 'err'); return Promise.resolve(false); }
+    setDriveStatus('⏳ جارٍ تحميل مكتبات جوجل...');
+    return loadScript('https://apis.google.com/js/api.js')
+      .then(function() { return loadScript('https://accounts.google.com/gsi/client'); })
+      .then(function() { return new Promise(function(r) { gapi.load('client', r); }); })
+      .then(function() { return gapi.client.init({ apiKey: s.gdrive_api_key, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] }); })
+      .then(function() {
+        driveTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: s.gdrive_client_id, scope: DRIVE_SCOPE,
+          callback: function(resp) {
+            if (resp.error) { setDriveStatus('❌ فشل تسجيل الدخول: ' + resp.error, 'err'); return; }
+            driveSignedIn = true; updateDriveButtons(); setDriveStatus('✅ مسجّل دخول إلى جوجل درايف', 'ok');
+            updateBadge(); toast('✅ تم الاتصال بجوجل درايف');
+          }
+        });
+        driveReady = true; return true;
+      })
+      .catch(function(err) { setDriveStatus('❌ خطأ: ' + err.message, 'err'); return false; });
+  }
+
+  function driveGetOrCreateFolder() {
+    var q = "name='" + DRIVE_FOLDER_NAME + "' and mimeType='application/vnd.google-apps.folder' and trashed=false";
+    return gapi.client.drive.files.list({ q: q, fields: 'files(id,name)', spaces: 'drive' }).then(function(res) {
+      if (res.result.files && res.result.files.length) return res.result.files[0].id;
+      return gapi.client.drive.files.create({ resource: { name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }, fields: 'id' })
+        .then(function(c) { return c.result.id; });
+    });
+  }
+
+  function driveSaveReport(date) {
+    var report = getReport(date);
+    if (!report) return Promise.reject(new Error('لا يوجد تقرير'));
+    var content = JSON.stringify(report);
+    return driveGetOrCreateFolder().then(function(folderId) {
+      var name = date + '.json';
+      return gapi.client.drive.files.list({
+        q: "name='" + name + "' and '" + folderId + "' in parents and trashed=false",
+        fields: 'files(id,name)', spaces: 'drive'
+      }).then(function(res) {
+        var fileId;
+        if (res.result.files && res.result.files.length) {
+          fileId = res.result.files[0].id;
+          return fileId;
+        }
+        return gapi.client.drive.files.create({ resource: { name: name, parents: [folderId], mimeType: 'application/json' }, fields: 'id' })
+          .then(function(c) { return c.result.id; });
+      }).then(function(fileId) {
+        var token = gapi.client.getToken().access_token;
+        return fetch('https://www.googleapis.com/upload/drive/v3/files/' + fileId + '?uploadType=media', {
+          method: 'PATCH', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: content
+        }).then(function(r) {
+          if (!r.ok) throw new Error('فشل الرفع إلى درايف');
+          try { gapi.client.drive.permissions.create({ fileId: fileId, resource: { role: 'reader', type: 'anyone' } }); } catch(e) {}
+          return fileId;
+        });
+      });
+    });
+  }
+
+  function driveFetchReport(fileId, apiKey) {
+    var url = 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media&key=' + encodeURIComponent(apiKey);
+    return fetch(url).then(function(res) {
+      if (!res.ok) throw new Error('تعذّر التحميل من درايف: ' + res.status);
+      return res.json();
+    });
+  }
+
+  // ============ REPORT RENDERER ============
+  function sectionEmpty(iconHtml, iconCls, title, noteHtml) {
+    return '<section class="section visible"><h2><span class="ico ' + iconCls + '">' + iconHtml + '</span>' + escapeHtml(title) + '</h2>' + (noteHtml || '') + '<div class="empty">لا توجد عناصر مسجلة لهذا القسم</div></section>';
+  }
+  function renderTextSection(iconHtml, iconCls, title, items) {
+    if (!items.length) return sectionEmpty(iconHtml, iconCls, title);
+    var lis = items.map(function(s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('');
+    return '<section class="section"><h2><span class="ico ' + iconCls + '">' + iconHtml + '</span>' + escapeHtml(title) + '</h2><ul class="text-list">' + lis + '</ul></section>';
+  }
+  function renderIncitementSection(items) {
+    if (!items.length) return sectionEmpty('⚠️', 'ico-warn', 'منشورات تحريضية');
+    var cards = items.map(function(it) {
+      var t = it.title || 'بدون عنوان', u = it.url || '', isHttp = /^https?:\/\//i.test(u);
+      return '<a class="link-card" href="' + escapeHtml(isHttp ? u : '#') + '"' + (isHttp ? ' target="_blank" rel="noopener noreferrer"' : '') + '><div class="lc-title">' + escapeHtml(t) + '</div>' + (isHttp ? '<span class="lc-url">' + escapeHtml(shortenUrl(u)) + '</span>' : '') + '</a>';
+    }).join('');
+    return '<section class="section"><h2><span class="ico ico-warn">⚠️</span>منشورات تحريضية</h2><div class="link-grid two-col">' + cards + '</div></section>';
+  }
+  function renderPlatformSection(platform, title, items, noteText) {
+    var iconHtml = platform === 'x' ? X_SVG : FB_SVG;
+    var iconCls = platform === 'x' ? 'ico-x' : 'ico-fb';
+    var platformLabel = platform === 'x' ? 'منصة X' : 'مجموعة فيسبوك';
+    var actionLabel = platform === 'x' ? 'اضغط لعرض التغريدة' : 'اضغط لعرض المنشور';
+    var noteHtml = noteText ? '<p class="section-note">💡 ' + escapeHtml(noteText) + '</p>' : '';
+    if (!items.length) return sectionEmpty(iconHtml, iconCls, title, noteHtml);
+    var cards = items.map(function(it) {
+      var t = it.title || 'بدون عنوان', u = it.url || '', isHttp = /^https?:\/\//i.test(u);
+      return '<div class="platform-card platform-' + platform + '"><div class="platform-badge">' + iconHtml + '<span>' + platformLabel + '</span></div><p class="platform-text">' + escapeHtml(t) + '</p>' + (isHttp ? '<a class="platform-link" href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer">' + iconHtml + '<span>' + actionLabel + '</span></a>' : '') + '</div>';
+    }).join('');
+    return '<section class="section"><h2><span class="ico ' + iconCls + '">' + iconHtml + '</span>' + escapeHtml(title) + '</h2>' + noteHtml + '<div class="platform-list">' + cards + '</div></section>';
+  }
+  function renderFullReport(r, date) {
+    return '<div class="report-header"><h1 class="report-title">تقرير الرصد اليومي</h1><div class="report-date">' + arDate(r.report_date || date) + '</div></div>'
+      + renderTextSection(X_SVG, 'ico-x', 'أبرز سرديات الخصوم على منصة X', r.twitter_narratives || [])
+      + renderTextSection(FB_SVG, 'ico-fb', 'أبرز ما يتداول في مجموعات فيسبوك المحلية', r.facebook_groups || [])
+      + renderIncitementSection(r.incitement_posts || [])
+      + renderPlatformSection('x', 'تغريدات استدلالية', r.hostile_tweets || [])
+      + renderPlatformSection('fb', 'منشورات استدلالية من مجموعات الفيسبوك المحلية', r.suggestive_fb_posts || [], 'في حال لم يظهر لك المنشور عند الضغط عليه فقد تكون المجموعة مغلقة وتتطلب الاشتراك')
+      + '<div class="report-footer">تقرير الرصد اليومي - قسم المعلومات</div>';
+  }
+  function observeSections() {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.section:not(.visible)').forEach(function(s) { obs.observe(s); });
+  }
+
+  // ============ MODE DETECTION ============
+  var qs = new URLSearchParams(window.location.search);
+  var hashParams = new URLSearchParams(window.location.hash.slice(1));
+  var isViewerMode = qs.has('date') || qs.has('d') || hashParams.has('r') || hashParams.has('d');
+
+  // ============ BADGE UPDATE ============
+  function updateBadge() {
+    var badge = document.getElementById('storage-badge');
+    if (!badge) return;
+    if (isGhConfigured()) { badge.textContent = '🐙 GitHub'; badge.style.background = 'rgba(21,128,61,0.12)'; badge.style.color = '#15803D'; badge.style.borderColor = 'rgba(21,128,61,0.3)'; }
+    else if (driveSignedIn) { badge.textContent = '☁️ درايف'; badge.style.background = 'rgba(59,130,246,0.12)'; badge.style.color = '#2563eb'; badge.style.borderColor = 'rgba(59,130,246,0.3)'; }
+    else { badge.textContent = '💾 تخزين محلي'; badge.style.background = ''; badge.style.color = ''; badge.style.borderColor = ''; }
+  }
+
+  // =============================================================
+  //   VIEWER-ONLY MODE (shared links)
+  // =============================================================
+  if (isViewerMode) {
+    document.getElementById('admin-header').style.display = 'none';
+    document.getElementById('admin-main').style.display = 'none';
+    document.getElementById('viewer-bar').style.display = '';
+    document.getElementById('viewer-main').style.display = '';
+    document.title = 'تقرير الرصد اليومي';
+
+    var voContent = document.getElementById('vo-content');
+    var vbSelect = document.getElementById('vb-date-select');
+    var voReports = {};
+    var voGhOwner = null, voGhRepo = null;
+
+    function voShowReport(date) {
+      var r = voReports[date];
+      if (!r) {
+        voContent.innerHTML = '<div class="no-report"><div class="big">📭</div><h2>لا يوجد تقرير لهذا التاريخ</h2></div>';
+        return;
+      }
+      document.title = 'تقرير الرصد اليومي - ' + arDate(date);
+      voContent.innerHTML = renderFullReport(r, date);
+      observeSections();
+    }
+
+    vbSelect.addEventListener('change', function() {
+      var d = vbSelect.value;
+      if (voReports[d]) { voShowReport(d); return; }
+      // Lazy load from GitHub
+      if (voGhOwner && voGhRepo) {
+        voContent.innerHTML = '<div class="no-report"><div class="big">⏳</div><h2>جارٍ التحميل...</h2></div>';
+        ghFetchRaw(voGhOwner, voGhRepo, 'reports/' + d + '.json').then(function(report) {
+          voReports[d] = report;
+          voShowReport(d);
+        }).catch(function() {
+          voContent.innerHTML = '<div class="no-report"><div class="big">⚠️</div><h2>تعذّر تحميل التقرير</h2></div>';
+        });
+      }
+    });
+
+    document.getElementById('vb-copy-btn').addEventListener('click', function() {
+      copyText(window.location.href).then(function() { toast('🔗 تم نسخ الرابط'); });
+    });
+
+    // Set admin link to same page without params
+    document.getElementById('vb-admin-link').href = window.location.pathname;
+
+    function voInit() {
+      var dateParam = qs.get('date');
+      var ghParam = qs.get('gh');
+
+      // 1) GitHub: ?date=YYYY-MM-DD with optional ?gh=owner/repo
+      if (dateParam) {
+        if (ghParam && ghParam.includes('/')) {
+          var parts = ghParam.split('/');
+          voGhOwner = parts[0]; voGhRepo = parts[1];
+        } else {
+          var s = loadSettings();
+          voGhOwner = s.gh_owner; voGhRepo = s.gh_repo;
+        }
+
+        var loadPromise;
+        if (voGhOwner && voGhRepo) {
+          loadPromise = ghFetchRaw(voGhOwner, voGhRepo, 'reports/' + dateParam + '.json')
+            .then(function(report) { voReports[dateParam] = report; })
+            .catch(function() {
+              // Try same-origin (GitHub Pages)
+              return fetch('./reports/' + dateParam + '.json').then(function(res) {
+                if (res.ok) return res.json().then(function(r) { voReports[dateParam] = r; });
+              }).catch(function() {
+                // localStorage fallback
+                var local = getReport(dateParam);
+                if (local) voReports[dateParam] = local;
+              });
+            });
+          // Also fetch index for date selector
+          loadPromise = loadPromise.then(function() {
+            return ghFetchRaw(voGhOwner, voGhRepo, 'reports/index.json').catch(function() { return []; });
+          }).then(function(index) {
+            if (Array.isArray(index)) {
+              index.forEach(function(d) { if (!voReports[d]) voReports[d] = null; }); // null = not yet loaded
+            }
+          });
+        } else {
+          loadPromise = fetch('./reports/' + dateParam + '.json').then(function(res) {
+            if (res.ok) return res.json().then(function(r) { voReports[dateParam] = r; });
+          }).catch(function() {
+            var local = getReport(dateParam);
+            if (local) voReports[dateParam] = local;
+          });
+        }
+
+        loadPromise.then(function() {
+          var dates = Object.keys(voReports).sort().reverse();
+          if (dates.length) {
+            vbSelect.innerHTML = dates.map(function(d) { return '<option value="' + escapeHtml(d) + '">' + arDate(d) + '</option>'; }).join('');
+            vbSelect.value = dateParam;
+            voShowReport(dateParam);
+          } else {
+            voContent.innerHTML = '<div class="no-report"><div class="big">⚠️</div><h2>تعذّر تحميل التقرير</h2><p>تأكد من صحة الرابط وأن المستودع عام</p></div>';
+          }
+        });
+        return;
+      }
+
+      // 2) Google Drive: ?d=fileId&k=apiKey
+      var driveId = qs.get('d');
+      var apiKey = qs.get('k');
+      if (driveId && apiKey) {
+        driveFetchReport(driveId, apiKey).then(function(report) {
+          if (report && report.report_date) {
+            voReports[report.report_date] = report;
+            vbSelect.innerHTML = '<option value="' + escapeHtml(report.report_date) + '">' + arDate(report.report_date) + '</option>';
+            voShowReport(report.report_date);
+          }
+        }).catch(function(e) {
+          voContent.innerHTML = '<div class="no-report"><div class="big">⚠️</div><h2>تعذّر التحميل من درايف</h2><p>' + escapeHtml(e.message) + '</p></div>';
+        });
+        return;
+      }
+
+      // 3) Hash: #r=compressed
+      var rParam = hashParams.get('r');
+      if (rParam) {
+        decompressFromB64Url(rParam).then(function(json) {
+          var report = JSON.parse(json);
+          if (report && report.report_date) {
+            voReports[report.report_date] = report;
+            vbSelect.innerHTML = '<option value="' + escapeHtml(report.report_date) + '">' + arDate(report.report_date) + '</option>';
+            voShowReport(report.report_date);
+          }
+        }).catch(function() {
+          voContent.innerHTML = '<div class="no-report"><div class="big">⚠️</div><h2>تعذّر فك البيانات</h2></div>';
+        });
+        return;
+      }
+
+      // 4) Legacy: #d=base64&t=date
+      var dParam = hashParams.get('d');
+      if (dParam) {
+        try {
+          var bytes = b64UrlToBytes(dParam);
+          var all = JSON.parse(new TextDecoder().decode(bytes));
+          Object.assign(voReports, all);
+          var dates = Object.keys(voReports).sort().reverse();
+          vbSelect.innerHTML = dates.map(function(d) { return '<option value="' + escapeHtml(d) + '">' + arDate(d) + '</option>'; }).join('');
+          var tParam = hashParams.get('t');
+          voShowReport(tParam && voReports[tParam] ? tParam : dates[0]);
+        } catch(e) {
+          voContent.innerHTML = '<div class="no-report"><div class="big">⚠️</div><h2>تعذّر قراءة البيانات</h2></div>';
+        }
+        return;
+      }
+
+      voContent.innerHTML = '<div class="no-report"><div class="big">📭</div><h2>لا توجد بيانات في الرابط</h2></div>';
+    }
+
+    voInit();
+    return; // Don't initialize admin mode
+  }
+
+  // =============================================================
+  //   ADMIN MODE
+  // =============================================================
+
+  // ============ TABS ============
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.tab === name); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.toggle('active', p.id === 'tab-' + name); });
+    if (name === 'viewer') { renderViewer(); updateShareBanner(); }
+    if (name === 'archive') renderArchive();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.addEventListener('click', function() { switchTab(b.dataset.tab); }); });
+
+  // ============ INPUT FORM ============
+  var dateInput = document.getElementById('report_date');
+  dateInput.value = new Date().toISOString().slice(0, 10);
+
+  function makeTextRow(value) {
+    var row = document.createElement('div'); row.className = 'item-row';
+    row.innerHTML = '<textarea placeholder="اكتب النص هنا..."></textarea><button type="button" class="btn-remove">حذف</button>';
+    row.querySelector('textarea').value = value || '';
+    row.querySelector('.btn-remove').addEventListener('click', function() { row.remove(); });
+    return row;
+  }
+  function makeLinkRow(item) {
+    var row = document.createElement('div'); row.className = 'link-row';
+    row.innerHTML = '<input type="text" placeholder="العنوان / نص التوضيح"><input type="url" placeholder="https://..."><button type="button" class="btn-remove">حذف</button>';
+    var inputs = row.querySelectorAll('input');
+    inputs[0].value = (item && item.title) || ''; inputs[1].value = (item && item.url) || '';
+    row.querySelector('.btn-remove').addEventListener('click', function() { row.remove(); });
+    return row;
+  }
+
+  var lists = {
+    twitter:       { container: document.getElementById('twitter_list'),       type: 'text' },
+    facebook:      { container: document.getElementById('facebook_list'),      type: 'text' },
+    incitement:    { container: document.getElementById('incitement_list'),    type: 'link' },
+    hostile:       { container: document.getElementById('hostile_list'),       type: 'link' },
+    suggestive_fb: { container: document.getElementById('suggestive_fb_list'), type: 'link' }
+  };
+  function addRow(key, value) { lists[key].container.appendChild(lists[key].type === 'text' ? makeTextRow(value) : makeLinkRow(value)); }
+  function clearList(key) { lists[key].container.innerHTML = ''; }
+
+  function collectForm() {
+    var out = { twitter_narratives: [], facebook_groups: [], incitement_posts: [], hostile_tweets: [], suggestive_fb_posts: [] };
+    lists.twitter.container.querySelectorAll('textarea').forEach(function(t) { var v = t.value.trim(); if (v) out.twitter_narratives.push(v); });
+    lists.facebook.container.querySelectorAll('textarea').forEach(function(t) { var v = t.value.trim(); if (v) out.facebook_groups.push(v); });
+    ['incitement','hostile','suggestive_fb'].forEach(function(key) {
+      var targetKey = key === 'suggestive_fb' ? 'suggestive_fb_posts' : (key === 'hostile' ? 'hostile_tweets' : 'incitement_posts');
+      lists[key].container.querySelectorAll('.link-row').forEach(function(row) {
+        var inputs = row.querySelectorAll('input');
+        var title = inputs[0].value.trim(), url = inputs[1].value.trim();
+        if (title || url) out[targetKey].push({ title: title, url: url });
+      });
+    });
+    return out;
+  }
+
+  function loadIntoForm(date) {
+    Object.keys(lists).forEach(clearList);
+    var r = getReport(date);
+    if (r) {
+      (r.twitter_narratives  || []).forEach(function(v) { addRow('twitter', v); });
+      (r.facebook_groups     || []).forEach(function(v) { addRow('facebook', v); });
+      (r.incitement_posts    || []).forEach(function(v) { addRow('incitement', v); });
+      (r.hostile_tweets      || []).forEach(function(v) { addRow('hostile', v); });
+      (r.suggestive_fb_posts || []).forEach(function(v) { addRow('suggestive_fb', v); });
+    }
+    Object.keys(lists).forEach(function(k) { if (!lists[k].container.children.length) addRow(k); });
+    resetSaveButtons();
+  }
+
+  function resetSaveButtons() {
+    var a = document.getElementById('save-archive-btn'), p = document.getElementById('save-publish-btn');
+    a.classList.remove('done'); a.textContent = '💾 حفظ في الأرشيف'; p.disabled = true;
+  }
+
+  dateInput.addEventListener('change', function() { loadIntoForm(dateInput.value); });
+  document.querySelectorAll('[data-add]').forEach(function(b) { b.addEventListener('click', function() { addRow(b.dataset.add); }); });
+
+  document.getElementById('new-report-btn').addEventListener('click', function() {
+    if (!confirm('هل تريد مسح جميع المدخلات والبدء بتقرير جديد؟')) return;
+    dateInput.value = new Date().toISOString().slice(0, 10);
+    Object.keys(lists).forEach(clearList);
+    Object.keys(lists).forEach(function(k) { addRow(k); });
+    resetSaveButtons();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast('🆕 بدأت تقريراً جديداً');
+  });
+
+  // ============ SAVE FLOW ============
+  function persistCurrentForm() {
+    var date = dateInput.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { toast('الرجاء اختيار تاريخ صحيح', true); return null; }
+    var data = collectForm();
+    data.report_date = date;
+    setReport(date, data);
+    return date;
+  }
+
+  document.getElementById('save-archive-btn').addEventListener('click', function() {
+    var date = persistCurrentForm(); if (!date) return;
+    toast('✅ تم حفظ التقرير في الأرشيف');
+    var btn = document.getElementById('save-archive-btn');
+    btn.classList.add('done'); btn.textContent = '✅ محفوظ في الأرشيف';
+    document.getElementById('save-publish-btn').disabled = false;
+  });
+
+  document.getElementById('save-publish-btn').addEventListener('click', function() {
+    var date = persistCurrentForm(); if (!date) return;
+    setPublished(date);
+    toast('📤 تم نشر التقرير');
+    setTimeout(function() { switchTab('viewer'); document.getElementById('viewer-date-select').value = date; renderViewer(); }, 350);
+  });
+
+  // ============ VIEWER TAB ============
+  function renderViewer() {
+    var select = document.getElementById('viewer-date-select');
+    var content = document.getElementById('viewer-content');
+    var dates = listDates();
+    var published = getPublished();
+    var prev = select.value;
+
+    if (!dates.length) {
+      select.innerHTML = '<option>لا توجد تقارير</option>';
+      content.innerHTML = '<div class="no-report"><div class="big">📭</div><h2>لا يوجد تقرير منشور بعد</h2><p>ابدأ بإدخال أول تقرير من تبويب «إدخال البيانات»</p></div>';
+      return;
+    }
+
+    select.innerHTML = dates.map(function(d) { return '<option value="' + escapeHtml(d) + '">' + arDate(d) + '</option>'; }).join('');
+    var dateToShow = prev && dates.includes(prev) ? prev : (published && dates.includes(published) ? published : dates[0]);
+    select.value = dateToShow;
+
+    var r = getReport(dateToShow);
+    if (!r) { content.innerHTML = '<div class="no-report"><h2>لا يوجد تقرير</h2></div>'; return; }
+    content.innerHTML = renderFullReport(r, dateToShow);
+    observeSections();
+  }
+  document.getElementById('viewer-date-select').addEventListener('change', renderViewer);
+
+  // ============ SHARE URL GENERATION ============
+  function updateShareBanner() {
+    var el = document.getElementById('share-mode-banner');
+    if (!el) return;
+    if (isGhConfigured()) {
+      el.className = 'status-box ok';
+      el.innerHTML = '✅ <strong>GitHub مُفعّل</strong> — ستحصل على رابط قصير جداً يعمل فوراً بدون انتظار.';
+    } else if (driveSignedIn) {
+      el.className = 'status-box ok';
+      el.innerHTML = '✅ <strong>درايف مُفعّل</strong> — رابط متوسط الطول يعمل مباشرة.';
+    } else {
+      el.className = 'status-box';
+      el.innerHTML = '💡 لتقصير الرابط: اذهب إلى <strong>⚙️ الإعدادات</strong> وفعّل <strong>GitHub</strong> (مُوصى به) أو <strong>درايف</strong>.';
+    }
+  }
+
+  function buildBestShareUrl(date) {
+    var s = loadSettings();
+    var report = getReport(date);
+    if (!report) return Promise.reject(new Error('لا يوجد تقرير'));
+
+    var baseUrl = s.deployment_url || window.location.href.split('?')[0].split('#')[0];
+
+    // 1. GitHub (shortest, no delay)
+    if (isGhConfigured()) {
+      return ghPushReport(date).then(function() {
+        return ghUpdateIndex().catch(function() {}); // index update is optional
+      }).then(function() {
+        var isPages = s.deployment_url && s.deployment_url.toLowerCase().indexOf(s.gh_owner.toLowerCase() + '.github.io') !== -1;
+        var sep = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+        var url;
+        if (isPages) {
+          url = baseUrl + sep + 'date=' + date;
+        } else {
+          url = baseUrl + sep + 'date=' + date + '&gh=' + encodeURIComponent(s.gh_owner + '/' + s.gh_repo);
+        }
+        return { url: url, mode: 'GitHub' };
+      });
+    }
+
+    // 2. Google Drive
+    if (driveSignedIn && s.gdrive_api_key) {
+      return driveSaveReport(date).then(function(fileId) {
+        var sep = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+        var url = baseUrl + sep + 'd=' + encodeURIComponent(fileId) + '&k=' + encodeURIComponent(s.gdrive_api_key);
+        return { url: url, mode: 'درايف' };
+      });
+    }
+
+    // 3. Hash-based compressed (fallback - long URL)
+    return compressToB64Url(JSON.stringify(report)).then(function(compressed) {
+      return { url: baseUrl + '#r=' + compressed, mode: 'محلي (طويل)' };
+    });
+  }
+
+  document.getElementById('copy-link-btn').addEventListener('click', function() {
+    var dates = listDates();
+    if (!dates.length) { toast('لا يوجد تقرير لمشاركته', true); return; }
+    var date = document.getElementById('viewer-date-select').value || dates[0];
+    var btn = document.getElementById('copy-link-btn');
+    var originalLabel = btn.textContent;
+    btn.textContent = '⏳ جارٍ الإنشاء...'; btn.disabled = true;
+    buildBestShareUrl(date).then(function(result) {
+      return copyText(result.url).then(function() {
+        toast('🔗 تم نسخ الرابط (' + result.mode + ' · ' + toAr(result.url.length) + ' حرف)');
+      });
+    }).catch(function(err) {
+      toast('فشل إنشاء الرابط: ' + err.message, true);
+    }).finally(function() {
+      btn.textContent = originalLabel; btn.disabled = false;
+    });
+  });
+
+  // ============ ARCHIVE TAB ============
+  function updateStorageInfo() {
+    var el = document.getElementById('storage-info');
+    var all = loadAll();
+    var count = Object.keys(all).length;
+    var size = new Blob([JSON.stringify(all)]).size;
+    var kb = (size / 1024).toFixed(1);
+    el.innerHTML = '💾 <strong>' + toAr(count) + '</strong> تقرير محفوظ محلياً · الحجم: <strong>' + toAr(kb) + ' ك.ب</strong>';
+  }
+
+  function renderArchive() {
+    updateStorageInfo();
+    var content = document.getElementById('archive-content');
+    var dates = listDates();
+    if (!dates.length) {
+      content.innerHTML = '<div class="no-report"><div class="big">📭</div><h2>الأرشيف فارغ</h2></div>';
+      return;
+    }
+    var groups = new Map();
+    dates.forEach(function(d) { var key = d.slice(0, 7); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(d); });
+
+    content.innerHTML = Array.from(groups.keys()).sort().reverse().map(function(key) {
+      var parts = key.split('-').map(Number), y = parts[0], m = parts[1];
+      var ds = groups.get(key).sort().reverse();
+      var cards = ds.map(function(d) {
+        var dn = parseInt(d.split('-')[2], 10);
+        return '<div class="day-card" data-date="' + escapeHtml(d) + '"><button type="button" class="day-delete" data-del="' + escapeHtml(d) + '" title="حذف">×</button><span class="day-num">' + toAr(dn) + '</span><span class="day-name">' + dayName(d) + '</span></div>';
+      }).join('');
+      return '<div class="month-block"><h2><span>' + escapeHtml(AR_MONTHS[m-1] + ' ' + toAr(y)) + '</span><span class="count">' + toAr(ds.length) + ' تقرير</span></h2><div class="day-grid">' + cards + '</div></div>';
+    }).join('');
+
+    content.querySelectorAll('.day-card').forEach(function(c) {
+      c.addEventListener('click', function(e) {
+        if (e.target.closest('.day-delete')) return;
+        switchTab('viewer');
+        setTimeout(function() { document.getElementById('viewer-date-select').value = c.dataset.date; renderViewer(); }, 50);
+      });
+    });
+    content.querySelectorAll('.day-delete').forEach(function(b) {
+      b.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        var d = b.dataset.del;
+        if (!confirm('هل تريد حذف تقرير ' + arDate(d) + '؟')) return;
+        deleteReport(d);
+        if (getPublished() === d) localStorage.removeItem(PUBLISHED_KEY);
+        renderArchive(); toast('تم حذف التقرير');
+      });
+    });
+  }
+
+  // ============ EXPORT / IMPORT ============
+  document.getElementById('export-btn').addEventListener('click', function() {
+    var data = { reports: loadAll(), published: getPublished(), exported_at: new Date().toISOString() };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'rasd-archive-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    toast('📥 تم تصدير الأرشيف');
+  });
+  document.getElementById('import-btn').addEventListener('click', function() { document.getElementById('import-file').click(); });
+  document.getElementById('import-file').addEventListener('change', function(e) {
+    var file = e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var data = JSON.parse(reader.result);
+        if (data.reports && typeof data.reports === 'object') {
+          saveAll(Object.assign({}, loadAll(), data.reports));
+          if (data.published) setPublished(data.published);
+          renderArchive(); toast('📤 تم استيراد الأرشيف بنجاح');
+        } else { toast('ملف غير صالح', true); }
+      } catch(ex) { toast('فشل قراءة الملف', true); }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // ============ SETTINGS UI ============
+  function initSettingsUI() {
+    var s = loadSettings();
+    document.getElementById('deployment-url').value = s.deployment_url || '';
+    document.getElementById('gh-token').value = s.gh_token || '';
+    document.getElementById('gh-owner').value = s.gh_owner || '';
+    document.getElementById('gh-repo').value = s.gh_repo || '';
+    document.getElementById('gdrive-client-id').value = s.gdrive_client_id || '';
+    document.getElementById('gdrive-api-key').value = s.gdrive_api_key || '';
+    if (s.deployment_url) showDeploymentPreview(s.deployment_url);
+    if (window.location.protocol === 'file:') document.getElementById('file-protocol-warning').style.display = 'block';
+    if (isGhConfigured()) {
+      document.getElementById('gh-status').textContent = '✅ الإعدادات محفوظة';
+      document.getElementById('gh-status').className = 'status-box ok';
+      document.getElementById('gh-actions').style.display = 'block';
+    }
+  }
+
+  function normalizeDeploymentUrl(raw) {
+    if (!raw) return '';
+    var url = raw.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\//i.test(url)) return null;
+    if (!/\/[^/]+\.html?$/i.test(url)) url += '/';
+    return url;
+  }
+
+  function showDeploymentPreview(url) {
+    var box = document.getElementById('deployment-url-preview');
+    if (!url) { box.style.display = 'none'; return; }
+    box.style.display = 'block'; box.className = 'status-box ok';
+    box.innerHTML = '✅ رابط المشاركة الأساسي: <br><code style="direction:ltr;display:inline-block;margin-top:6px;word-break:break-all">' + escapeHtml(url) + '</code>';
+  }
+
+  document.getElementById('save-deployment-url').addEventListener('click', function() {
+    var raw = document.getElementById('deployment-url').value.trim();
+    if (!raw) { saveSettings({ deployment_url: '' }); showDeploymentPreview(''); toast('تم مسح رابط النشر'); return; }
+    var url = normalizeDeploymentUrl(raw);
+    if (!url) { toast('الرابط يجب أن يبدأ بـ http:// أو https://', true); return; }
+    saveSettings({ deployment_url: url });
+    document.getElementById('deployment-url').value = url;
+    showDeploymentPreview(url);
+    toast('✅ تم حفظ رابط النشر');
+  });
+
+  // ============ GITHUB SETTINGS ============
+  document.getElementById('gh-save-btn').addEventListener('click', function() {
+    var token = document.getElementById('gh-token').value.trim();
+    var owner = document.getElementById('gh-owner').value.trim();
+    var repo = document.getElementById('gh-repo').value.trim();
+    saveSettings({ gh_token: token, gh_owner: owner, gh_repo: repo });
+    updateBadge();
+    if (token && owner && repo) {
+      document.getElementById('gh-status').textContent = '✅ تم حفظ الإعدادات';
+      document.getElementById('gh-status').className = 'status-box ok';
+      document.getElementById('gh-actions').style.display = 'block';
+    } else {
+      document.getElementById('gh-status').textContent = 'أكمل جميع الحقول أولاً';
+      document.getElementById('gh-status').className = 'status-box';
+      document.getElementById('gh-actions').style.display = 'none';
+    }
+    toast('✅ تم حفظ إعدادات GitHub');
+  });
+
+  document.getElementById('gh-test-btn').addEventListener('click', function() {
+    var statusEl = document.getElementById('gh-status');
+    statusEl.textContent = '⏳ جارٍ الاختبار...'; statusEl.className = 'status-box';
+    ghApi('').then(function(info) {
+      statusEl.textContent = '✅ الاتصال ناجح! المستودع: ' + info.full_name + (info.private ? ' (خاص)' : ' (عام)');
+      statusEl.className = 'status-box ok';
+      document.getElementById('gh-actions').style.display = 'block';
+      // Auto-set deployment URL if GitHub Pages
+      var s = loadSettings();
+      if (!s.deployment_url && !info.private) {
+        var pagesUrl = 'https://' + info.owner.login + '.github.io/' + info.name + '/';
+        saveSettings({ deployment_url: pagesUrl });
+        document.getElementById('deployment-url').value = pagesUrl;
+        showDeploymentPreview(pagesUrl);
+        toast('✅ تم ضبط رابط GitHub Pages تلقائياً');
+      }
+    }).catch(function(err) {
+      statusEl.textContent = '❌ فشل الاتصال: ' + err.message;
+      statusEl.className = 'status-box err';
+    });
+  });
+
+  document.getElementById('gh-sync-up').addEventListener('click', function() {
+    if (!isGhConfigured()) { toast('أكمل إعدادات GitHub أولاً', true); return; }
+    var dates = listDates();
+    if (!dates.length) { toast('لا توجد تقارير للرفع', true); return; }
+    var statusEl = document.getElementById('gh-status');
+    statusEl.textContent = '⏳ جارٍ رفع ' + toAr(dates.length) + ' تقرير...'; statusEl.className = 'status-box';
+    var ok = 0, fail = 0, i = 0;
+    function next() {
+      if (i >= dates.length) {
+        ghUpdateIndex().catch(function() {}).then(function() {
+          statusEl.textContent = '✅ تم رفع ' + toAr(ok) + ' تقرير' + (fail ? ' · فشل ' + toAr(fail) : '');
+          statusEl.className = 'status-box ok';
+          toast('⬆️ تم رفع ' + toAr(ok) + ' تقرير إلى GitHub');
+        });
+        return;
+      }
+      ghPushReport(dates[i]).then(function() { ok++; }).catch(function() { fail++; }).then(function() {
+        i++;
+        statusEl.textContent = '⏳ ' + toAr(i) + '/' + toAr(dates.length) + '...';
+        next();
+      });
+    }
+    next();
+  });
+
+  document.getElementById('gh-sync-down').addEventListener('click', function() {
+    if (!isGhConfigured()) { toast('أكمل إعدادات GitHub أولاً', true); return; }
+    var statusEl = document.getElementById('gh-status');
+    statusEl.textContent = '⏳ جارٍ جلب التقارير...'; statusEl.className = 'status-box';
+    var s = loadSettings();
+    ghListRemoteReports().then(function(remoteDates) {
+      if (!remoteDates.length) { statusEl.textContent = 'لا توجد تقارير في المستودع'; statusEl.className = 'status-box err'; return; }
+      statusEl.textContent = '⏳ جارٍ تحميل ' + toAr(remoteDates.length) + ' تقرير...';
+      var ok = 0, i = 0;
+      function next() {
+        if (i >= remoteDates.length) {
+          statusEl.textContent = '✅ تم تحميل ' + toAr(ok) + ' تقرير'; statusEl.className = 'status-box ok';
+          toast('⬇️ تم تحميل ' + toAr(ok) + ' تقرير من GitHub');
+          return;
+        }
+        ghFetchRaw(s.gh_owner, s.gh_repo, 'reports/' + remoteDates[i] + '.json').then(function(report) {
+          if (report && report.report_date) { setReport(report.report_date, report); ok++; }
+        }).catch(function() {}).then(function() { i++; next(); });
+      }
+      next();
+    }).catch(function(err) {
+      statusEl.textContent = '❌ ' + err.message; statusEl.className = 'status-box err';
+    });
+  });
+
+  // ============ GOOGLE DRIVE SETTINGS ============
+  document.getElementById('gdrive-save-creds').addEventListener('click', function() {
+    saveSettings({ gdrive_client_id: document.getElementById('gdrive-client-id').value.trim(), gdrive_api_key: document.getElementById('gdrive-api-key').value.trim() });
+    toast('✅ تم حفظ بيانات جوجل درايف');
+    setDriveStatus('البيانات محفوظة. اضغط «تسجيل الدخول» للمتابعة.');
+  });
+  document.getElementById('gdrive-signin').addEventListener('click', function() {
+    if (!driveReady) { initDriveClient().then(function(ok) { if (ok) driveTokenClient.requestAccessToken({ prompt: 'consent' }); }); }
+    else driveTokenClient.requestAccessToken({ prompt: 'consent' });
+  });
+  document.getElementById('gdrive-signout').addEventListener('click', function() {
+    var token = gapi.client.getToken();
+    if (token) { google.accounts.oauth2.revoke(token.access_token, function() {}); gapi.client.setToken(null); }
+    driveSignedIn = false; updateDriveButtons(); setDriveStatus('تم تسجيل الخروج'); updateBadge();
+  });
+  document.getElementById('gdrive-sync-up').addEventListener('click', function() {
+    if (!driveSignedIn) { toast('سجّل الدخول أولاً', true); return; }
+    var dates = listDates();
+    if (!dates.length) { toast('لا توجد تقارير', true); return; }
+    setDriveStatus('⏳ جارٍ رفع ' + toAr(dates.length) + ' تقرير...');
+    var ok = 0, i = 0;
+    function next() {
+      if (i >= dates.length) {
+        setDriveStatus('✅ تم رفع ' + toAr(ok) + ' تقرير', 'ok');
+        toast('⬆️ تم الرفع إلى درايف'); return;
+      }
+      driveSaveReport(dates[i]).then(function() { ok++; }).catch(function() {}).then(function() { i++; next(); });
+    }
+    next();
+  });
+  document.getElementById('gdrive-sync-down').addEventListener('click', function() {
+    if (!driveSignedIn) { toast('سجّل الدخول أولاً', true); return; }
+    setDriveStatus('⏳ جارٍ جلب التقارير...');
+    driveGetOrCreateFolder().then(function(folderId) {
+      return gapi.client.drive.files.list({
+        q: "'" + folderId + "' in parents and mimeType='application/json' and trashed=false",
+        fields: 'files(id,name)', spaces: 'drive', pageSize: 500
+      }).then(function(res) {
+        var files = res.result.files || [];
+        if (!files.length) { setDriveStatus('لا توجد تقارير في درايف', 'err'); return; }
+        var ok = 0, i = 0;
+        function next() {
+          if (i >= files.length) {
+            setDriveStatus('✅ تم تحميل ' + toAr(ok) + ' تقرير', 'ok');
+            toast('⬇️ تم التحميل من درايف'); return;
+          }
+          var token = gapi.client.getToken().access_token;
+          fetch('https://www.googleapis.com/drive/v3/files/' + files[i].id + '?alt=media', { headers: { Authorization: 'Bearer ' + token } })
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(report) { if (report && report.report_date) { setReport(report.report_date, report); ok++; } })
+            .catch(function() {}).then(function() { i++; next(); });
+        }
+        next();
+      });
+    }).catch(function(err) { setDriveStatus('❌ ' + err.message, 'err'); });
+  });
+
+  // ============ INIT ============
+  initSettingsUI();
+  updateDriveButtons();
+  updateBadge();
+  loadIntoForm(dateInput.value);
+
+})();
+</script>
+</body>
+</html>
