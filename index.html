@@ -193,6 +193,27 @@
   .no-report .big { font-size: 4rem; margin-bottom: 12px; opacity: 0.6; }
   .no-report h2 { color: var(--ink); margin: 0 0 8px; }
 
+  /* ========== REPORT ACTIONS (end of report) ========== */
+  .report-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+  @media (max-width: 600px) { .report-actions { grid-template-columns: 1fr; } }
+  .report-actions button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 20px; font-weight: 700; font-size: 1.02rem; border-radius: 14px; border: 1px solid transparent; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+  .report-actions .ra-copy { background: var(--orange); color: #fff; border-color: var(--orange-darker); }
+  .report-actions .ra-copy:hover { background: var(--orange-bright); box-shadow: 0 6px 18px rgba(194,65,12,0.30); }
+  .report-actions .ra-pdf { background: var(--card); color: var(--ink); border-color: var(--line-strong); }
+  .report-actions .ra-pdf:hover { background: var(--orange-soft); color: var(--orange); border-color: var(--orange); }
+
+  /* ========== PRINT STYLES ========== */
+  @media print {
+    body { background: #fff !important; }
+    header.app-header, .viewer-bar, .viewer-controls, .report-actions,
+    #share-mode-banner, .toast, footer.app-footer, .tab-panel:not(.active),
+    #tab-input, #tab-archive, #tab-settings, .tabs, .badge-mode, .header-top { display: none !important; }
+    main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+    .section { opacity: 1 !important; transform: none !important; break-inside: avoid; page-break-inside: avoid; box-shadow: none !important; border: 1px solid #ddd !important; }
+    .report-header { break-after: avoid; page-break-after: avoid; }
+    .report-footer { break-before: avoid; page-break-before: avoid; }
+  }
+
   /* ========== ARCHIVE ========== */
   .month-block { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
   .month-block h2 { margin: 0 0 12px; font-size: 1.08rem; color: var(--orange); font-weight: 800; padding-bottom: 10px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
@@ -349,22 +370,6 @@
   <!-- SETTINGS TAB -->
   <section class="tab-panel" id="tab-settings">
 
-    <!-- Deployment URL -->
-    <div class="card">
-      <h2><span class="ico ico-orange">🌐</span>رابط النشر العام</h2>
-      <p class="hint">الرابط العام الذي سيفتحه المستلمون. يُستخدم لتكوين روابط المشاركة.</p>
-      <div id="file-protocol-warning" class="warning-box" style="display:none">
-        <strong>⚠️ تحذير:</strong> أنت تفتح التطبيق من مسار محلي <code>file:///</code>.
-        روابط المشاركة لن تعمل عند المستلم. <strong>يجب نشر الملفات على استضافة</strong> (GitHub Pages هو الأسهل — راجع قسم GitHub أدناه).
-      </div>
-      <div class="settings-group">
-        <label class="settings-label" for="deployment-url">رابط الصفحة العام:</label>
-        <input type="url" id="deployment-url" class="settings-input" placeholder="https://username.github.io/repo-name/" />
-      </div>
-      <button type="button" class="btn-primary" id="save-deployment-url">💾 حفظ الرابط</button>
-      <div id="deployment-url-preview" class="status-box" style="display:none; margin-top:12px"></div>
-    </div>
-
     <!-- GitHub Integration -->
     <div class="card">
       <h2><span class="ico ico-orange">🐙</span>التخزين السحابي — GitHub (مُوصى به)</h2>
@@ -398,15 +403,20 @@
           </ol>
 
           <h4>٤. إنشاء رمز وصول (Token)</h4>
+          <p>🔗 <strong>الطريقة الأسهل:</strong> <a href="https://github.com/settings/personal-access-tokens/new?name=rasd-daily&description=%D8%B1%D8%B5%D8%AF+%D9%8A%D9%88%D9%85%D9%8A&contents=write" target="_blank">اضغط هنا لإنشاء التوكن تلقائياً بالإعدادات الصحيحة</a> — ستحتاج فقط لاختيار المستودع ومدة الصلاحية ثم الضغط على Generate token.</p>
+          <p>أو يدوياً:</p>
           <ol>
-            <li>اذهب إلى <a href="https://github.com/settings/tokens?type=beta" target="_blank">Settings → Developer settings → Fine-grained tokens</a></li>
-            <li>اضغط <strong>Generate new token</strong></li>
+            <li>اذهب إلى <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">Settings → Developer settings → Fine-grained tokens → Generate new token</a></li>
             <li>Token name: <code>rasd-daily</code></li>
             <li>Expiration: اختر المدة المناسبة</li>
-            <li>Repository access: <strong>Only select repositories</strong> → اختر مستودع <code>rasd-daily</code></li>
-            <li>Permissions → Repository permissions → <strong>Contents: Read and write</strong></li>
-            <li>اضغط <strong>Generate token</strong> وانسخ الرمز</li>
+            <li>Repository access: اختر <strong>Only select repositories</strong> ثم اختر مستودع <code>rasd-daily</code></li>
+            <li>انزل للأسفل إلى قسم <strong>Permissions</strong></li>
+            <li>اضغط على <strong>Repository permissions</strong> لتوسيع القائمة (ستظهر قائمة طويلة من الصلاحيات)</li>
+            <li>ابحث عن <strong>Contents</strong> في القائمة واضغط على القائمة المنسدلة بجانبها وغيّرها من <strong>No access</strong> إلى <strong>Read and write</strong></li>
+            <li>ملاحظة: عند اختيار Contents سيُضاف تلقائياً <strong>Metadata: Read-only</strong> — هذا طبيعي</li>
+            <li>اضغط <strong>Generate token</strong> في أسفل الصفحة وانسخ الرمز فوراً (لن يظهر مرة أخرى)</li>
           </ol>
+          <p>⚠️ <strong>بديل أبسط:</strong> إذا لم تجد الخيارات أعلاه، يمكنك استخدام <a href="https://github.com/settings/tokens/new?scopes=repo&description=rasd-daily" target="_blank">Classic Token</a> بصلاحية <code>repo</code> — أسهل لكن أقل أماناً (يمنح وصولاً لكل مستودعاتك).</p>
 
           <h4>٥. أدخل البيانات أدناه</h4>
           <p>ألصق الرمز واسم المستخدم واسم المستودع في الحقول ثم احفظ.</p>
@@ -787,7 +797,8 @@
       + renderIncitementSection(r.incitement_posts || [])
       + renderPlatformSection('x', 'تغريدات استدلالية', r.hostile_tweets || [])
       + renderPlatformSection('fb', 'منشورات استدلالية من مجموعات الفيسبوك المحلية', r.suggestive_fb_posts || [], 'في حال لم يظهر لك المنشور عند الضغط عليه فقد تكون المجموعة مغلقة وتتطلب الاشتراك')
-      + '<div class="report-footer">تقرير الرصد اليومي - قسم المعلومات</div>';
+      + '<div class="report-footer">تقرير الرصد اليومي - قسم المعلومات</div>'
+      + '<div class="report-actions"><button type="button" class="ra-copy" data-action="copy-link">🔗 نسخ رابط التقرير</button><button type="button" class="ra-pdf" data-action="save-pdf">📄 حفظ بصيغة PDF</button></div>';
   }
   function observeSections() {
     var obs = new IntersectionObserver(function(entries) {
@@ -835,6 +846,17 @@
       voContent.innerHTML = renderFullReport(r, date);
       observeSections();
     }
+
+    // Report action buttons (viewer-only mode)
+    voContent.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'copy-link') {
+        copyText(window.location.href).then(function() { toast('🔗 تم نسخ الرابط'); });
+      } else if (btn.dataset.action === 'save-pdf') {
+        window.print();
+      }
+    });
 
     vbSelect.addEventListener('change', function() {
       var d = vbSelect.value;
@@ -1113,6 +1135,29 @@
   }
   document.getElementById('viewer-date-select').addEventListener('change', renderViewer);
 
+  // Report action buttons (admin viewer tab)
+  document.getElementById('viewer-content').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    if (btn.dataset.action === 'copy-link') {
+      var dates = listDates();
+      if (!dates.length) { toast('لا يوجد تقرير لمشاركته', true); return; }
+      var date = document.getElementById('viewer-date-select').value || dates[0];
+      btn.textContent = '⏳ جارٍ الإنشاء...'; btn.disabled = true;
+      buildBestShareUrl(date).then(function(result) {
+        return copyText(result.url).then(function() {
+          toast('🔗 تم نسخ الرابط (' + result.mode + ' · ' + toAr(result.url.length) + ' حرف)');
+        });
+      }).catch(function(err) {
+        toast('فشل إنشاء الرابط: ' + err.message, true);
+      }).finally(function() {
+        btn.textContent = '🔗 نسخ رابط التقرير'; btn.disabled = false;
+      });
+    } else if (btn.dataset.action === 'save-pdf') {
+      window.print();
+    }
+  });
+
   // ============ SHARE URL GENERATION ============
   function updateShareBanner() {
     var el = document.getElementById('share-mode-banner');
@@ -1267,14 +1312,11 @@
   // ============ SETTINGS UI ============
   function initSettingsUI() {
     var s = loadSettings();
-    document.getElementById('deployment-url').value = s.deployment_url || '';
     document.getElementById('gh-token').value = s.gh_token || '';
     document.getElementById('gh-owner').value = s.gh_owner || '';
     document.getElementById('gh-repo').value = s.gh_repo || '';
     document.getElementById('gdrive-client-id').value = s.gdrive_client_id || '';
     document.getElementById('gdrive-api-key').value = s.gdrive_api_key || '';
-    if (s.deployment_url) showDeploymentPreview(s.deployment_url);
-    if (window.location.protocol === 'file:') document.getElementById('file-protocol-warning').style.display = 'block';
     if (isGhConfigured()) {
       document.getElementById('gh-status').textContent = '✅ الإعدادات محفوظة';
       document.getElementById('gh-status').className = 'status-box ok';
@@ -1282,38 +1324,17 @@
     }
   }
 
-  function normalizeDeploymentUrl(raw) {
-    if (!raw) return '';
-    var url = raw.trim().replace(/\/+$/, '');
-    if (!/^https?:\/\//i.test(url)) return null;
-    if (!/\/[^/]+\.html?$/i.test(url)) url += '/';
-    return url;
-  }
-
-  function showDeploymentPreview(url) {
-    var box = document.getElementById('deployment-url-preview');
-    if (!url) { box.style.display = 'none'; return; }
-    box.style.display = 'block'; box.className = 'status-box ok';
-    box.innerHTML = '✅ رابط المشاركة الأساسي: <br><code style="direction:ltr;display:inline-block;margin-top:6px;word-break:break-all">' + escapeHtml(url) + '</code>';
-  }
-
-  document.getElementById('save-deployment-url').addEventListener('click', function() {
-    var raw = document.getElementById('deployment-url').value.trim();
-    if (!raw) { saveSettings({ deployment_url: '' }); showDeploymentPreview(''); toast('تم مسح رابط النشر'); return; }
-    var url = normalizeDeploymentUrl(raw);
-    if (!url) { toast('الرابط يجب أن يبدأ بـ http:// أو https://', true); return; }
-    saveSettings({ deployment_url: url });
-    document.getElementById('deployment-url').value = url;
-    showDeploymentPreview(url);
-    toast('✅ تم حفظ رابط النشر');
-  });
-
   // ============ GITHUB SETTINGS ============
   document.getElementById('gh-save-btn').addEventListener('click', function() {
     var token = document.getElementById('gh-token').value.trim();
     var owner = document.getElementById('gh-owner').value.trim();
     var repo = document.getElementById('gh-repo').value.trim();
     saveSettings({ gh_token: token, gh_owner: owner, gh_repo: repo });
+    // Auto-derive GitHub Pages URL
+    if (owner && repo) {
+      var pagesUrl = 'https://' + owner + '.github.io/' + repo + '/';
+      saveSettings({ deployment_url: pagesUrl });
+    }
     updateBadge();
     if (token && owner && repo) {
       document.getElementById('gh-status').textContent = '✅ تم حفظ الإعدادات';
@@ -1336,12 +1357,9 @@
       document.getElementById('gh-actions').style.display = 'block';
       // Auto-set deployment URL if GitHub Pages
       var s = loadSettings();
-      if (!s.deployment_url && !info.private) {
+      if (!info.private) {
         var pagesUrl = 'https://' + info.owner.login + '.github.io/' + info.name + '/';
         saveSettings({ deployment_url: pagesUrl });
-        document.getElementById('deployment-url').value = pagesUrl;
-        showDeploymentPreview(pagesUrl);
-        toast('✅ تم ضبط رابط GitHub Pages تلقائياً');
       }
     }).catch(function(err) {
       statusEl.textContent = '❌ فشل الاتصال: ' + err.message;
