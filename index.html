@@ -68,11 +68,8 @@
   /* ========== VIEWER BAR (for shared links) ========== */
   .viewer-bar {
     background: var(--card); border-bottom: 1px solid var(--line);
-    padding: 14px 16px; position: sticky; top: 0; z-index: 100;
+    padding: 14px 16px; position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-  }
-  @supports (-webkit-touch-callout: none) {
-    .viewer-bar { position: -webkit-sticky; }
   }
   .viewer-bar-inner {
     max-width: 880px; margin: 0 auto;
@@ -81,14 +78,10 @@
   .viewer-bar-inner label { font-weight: 700; color: var(--ink); flex-shrink: 0; }
   .viewer-bar-inner select { flex: 1; min-width: 160px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--line-strong); border-radius: 10px; color: var(--ink); font-family: inherit; font-size: 1rem; }
   .viewer-bar-inner select:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(194,65,12,0.18); }
-  .viewer-bar-inner .vb-btn { background: var(--orange); color: #fff; border: 1px solid var(--orange-darker); padding: 10px 16px; font-weight: 700; font-family: inherit; font-size: 0.92rem; cursor: pointer; border-radius: 10px; transition: all 0.15s; }
-  .viewer-bar-inner .vb-btn:hover { background: var(--orange-bright); }
-  .viewer-bar-inner .vb-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; }
-  .viewer-bar-inner .vb-link:hover { color: var(--orange); }
 
   /* ========== MAIN & PANELS ========== */
   main { max-width: 980px; margin: 0 auto; padding: 22px 16px 80px; }
-  main.viewer-main { max-width: 880px; }
+  main.viewer-main { max-width: 880px; padding-top: 70px; }
   .tab-panel { display: none; animation: fadeIn 0.35s ease; }
   .tab-panel.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -614,20 +607,11 @@
 
     var printContent = tmp.innerHTML;
 
-    // Create a hidden iframe for printing (works on mobile + preserves links)
-    var iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:800px;height:600px;border:none;';
-    document.body.appendChild(iframe);
-
     var styleSheets = '';
     document.querySelectorAll('style').forEach(function(s) { styleSheets += s.outerHTML; });
     document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l) { styleSheets += l.outerHTML; });
 
-    var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    iframeDoc.open();
-    iframeDoc.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
-      + styleSheets
-      + '<style>'
+    var printStyles = '<style>'
       + 'body { background: #fff !important; padding: 20px !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }'
       + '.section { opacity: 1 !important; transform: none !important; }'
       + '.report-header { background: linear-gradient(180deg, rgba(194,65,12,0.10) 0%, rgba(194,65,12,0.02) 100%) !important; border-top: 3px solid #C2410C !important; }'
@@ -645,27 +629,53 @@
       + '.platform-link { background: #C2410C !important; color: #fff !important; }'
       + 'a[href] { color: #C2410C; }'
       + '.counter-campaign-section { border-right: 3px solid #C2410C !important; background: #FBF7EE !important; }'
-      + '@media print { @page { margin: 15mm; } body { background: #fff !important; } }'
-      + '</style></head><body>' + printContent + '</body></html>');
-    iframeDoc.close();
+      + '.pdf-close-bar { position:sticky;top:0;z-index:999;background:#C2410C;color:#fff;text-align:center;padding:12px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit;border:none;width:100%;display:block; }'
+      + '.pdf-close-bar:hover { background:#EA580C; }'
+      + '@media print { .pdf-close-bar { display:none !important; } @page { margin: 15mm; } body { background: #fff !important; } }'
+      + '</style>';
 
-    // Wait for content to load then print
-    iframe.onload = function() {
+    var fullHtml = '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>' + (document.title || '\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0631\u0635\u062f \u0627\u0644\u064a\u0648\u0645\u064a') + '</title>'
+      + styleSheets + printStyles
+      + '</head><body>'
+      + '<button class="pdf-close-bar" onclick="window.close()" title="\u0625\u063a\u0644\u0627\u0642">\u2190 \u0631\u062c\u0648\u0639 | \u0644\u062d\u0641\u0638 PDF: \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0634\u0627\u0631\u0643\u0629 \u279c \u0637\u0628\u0627\u0639\u0629 \u279c \u062d\u0641\u0638 \u0643\u0640 PDF</button>'
+      + printContent
+      + '</body></html>';
+
+    // Detect mobile
+    var isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // On mobile: open new tab with the report (user can share/print/save from there)
+      var blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      var blobUrl = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = blobUrl;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.click();
+      setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+      toast('\ud83d\udcc4 \u062a\u0645 \u0641\u062a\u062d \u0627\u0644\u062a\u0642\u0631\u064a\u0631 \u2014 \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0634\u0627\u0631\u0643\u0629 \u279c \u0637\u0628\u0627\u0639\u0629 \u279c \u062d\u0641\u0638 \u0643\u0640 PDF');
+    } else {
+      // On desktop: use hidden iframe for clean print (preserves clickable links)
+      var iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:800px;height:600px;border:none;';
+      document.body.appendChild(iframe);
+      var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(fullHtml);
+      iframeDoc.close();
+      iframe.onload = function() {
+        setTimeout(function() {
+          try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch(e) { window.print(); }
+          setTimeout(function() { try { document.body.removeChild(iframe); } catch(e) {} }, 2000);
+        }, 500);
+      };
       setTimeout(function() {
-        try {
-          iframe.contentWindow.focus();
-          iframe.contentWindow.print();
-        } catch(e) {
-          window.print();
-        }
-        setTimeout(function() { document.body.removeChild(iframe); }, 2000);
-      }, 500);
-    };
-    // Fallback
-    setTimeout(function() {
-      try { iframe.contentWindow.print(); } catch(e) {}
-      setTimeout(function() { try { document.body.removeChild(iframe); } catch(e) {} }, 2000);
-    }, 3000);
+        try { iframe.contentWindow.print(); } catch(e) {}
+        setTimeout(function() { try { document.body.removeChild(iframe); } catch(e) {} }, 2000);
+      }, 3000);
+    }
   }
 
   // ============ LOCAL STORAGE ============
