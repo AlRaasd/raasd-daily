@@ -1165,6 +1165,15 @@
       document.title = 'تقرير الرصد اليومي - ' + arDate(date);
       voContent.innerHTML = renderFullReport(r, date);
       observeSections();
+      voContent.querySelectorAll('[data-action]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var action = btn.dataset.action;
+          if (action === 'copy-link') { copyText(window.location.href).then(function() { toast('🔗 تم نسخ الرابط'); }); }
+          else if (action === 'copy-text') { copyReportText(voContent); }
+          else if (action === 'open-archive') { vaOpen('browse'); }
+          else if (action === 'open-search') { vaOpen('search'); }
+        });
+      });
     }
 
     // ========== VIEWER ARCHIVE ==========
@@ -1177,8 +1186,13 @@
     var AR_MONTHS_VA = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
     function vaBaseUrl() {
-      if (!voGhOwner || !voGhRepo) return null;
-      return 'https://raw.githubusercontent.com/' + encodeURIComponent(voGhOwner) + '/' + encodeURIComponent(voGhRepo) + '/main/reports-archive/';
+      var owner = voGhOwner, repo = voGhRepo;
+      if (!owner || !repo) {
+        var s = loadSettings();
+        owner = s.gh_owner; repo = s.gh_repo;
+      }
+      if (!owner || !repo) return null;
+      return 'https://raw.githubusercontent.com/' + encodeURIComponent(owner) + '/' + encodeURIComponent(repo) + '/main/reports-archive/';
     }
 
     function vaSetContent(html) {
@@ -1187,11 +1201,17 @@
       if (vm) vm.scrollTop = 0;
     }
 
+    function vaErrBack(msg) {
+      vaSetContent('<div class="va-card"><div class="va-no-gh">' + msg + '</div><div style="margin-top:16px"><button type="button" class="va-back-btn" id="va-err-back-btn">← رجوع للتقرير</button></div></div>');
+      var eb = document.getElementById('va-err-back-btn');
+      if (eb) eb.addEventListener('click', vaBackToReport);
+    }
+
     function vaOpen(mode) {
       vaMode = mode;
       var base = vaBaseUrl();
       if (!base) {
-        vaSetContent('<div class="va-card"><div class="va-no-gh">⚙️ الأرشيف غير متاح — رابط التقرير لا يتضمن معلومات المستودع</div></div>');
+        vaErrBack('⚙️ الأرشيف غير متاح — افتح التقرير من رابط يتضمن إعدادات المستودع');
         return;
       }
       if (vaIndex) { mode === 'browse' ? vaRenderBrowse() : vaRenderSearch(); return; }
@@ -1201,7 +1221,7 @@
           vaIndex = data;
           mode === 'browse' ? vaRenderBrowse() : vaRenderSearch();
         }).catch(function(e) {
-          vaSetContent('<div class="va-card"><div class="va-err">⚠️ تعذّر تحميل فهرس الأرشيف — ' + escapeHtml(e.message) + '</div></div>');
+          vaErrBack('⚠️ تعذّر تحميل فهرس الأرشيف — ' + escapeHtml(e.message));
         });
     }
 
