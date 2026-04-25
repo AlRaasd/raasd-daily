@@ -1240,7 +1240,7 @@
 
     // ---- BROWSE MODE ----
     function vaRenderBrowse() {
-      var years = ['2026','2025','2024'];
+      var years = ['2026','2025','2024','تجريبي'];
       if (!vaActiveYear) vaActiveYear = years[0];
       var html = '<div class="va-card">';
       html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">';
@@ -1248,7 +1248,8 @@
       html += '<button type="button" class="va-back-btn" id="va-to-report-browse">← رجوع للتقرير</button>';
       html += '</div>';
       html += '<div class="va-year-tabs" id="va-year-tabs">' + years.map(function(y) {
-        return '<button class="va-year-btn' + (y === vaActiveYear ? ' active' : '') + '" data-va-year="' + y + '">' + y + '</button>';
+        var label = y === 'تجريبي' ? '🧪 تجريبي' : y;
+        return '<button class="va-year-btn' + (y === vaActiveYear ? ' active' : '') + '" data-va-year="' + y + '">' + label + '</button>';
       }).join('') + '</div>';
       html += '<div id="va-month-area"></div>';
       html += '</div>';
@@ -1269,6 +1270,22 @@
     function vaRenderMonthRow() {
       var monthArea = document.getElementById('va-month-area');
       if (!monthArea) return;
+
+      // ---- Test archive: load directly from test-archive.json ----
+      if (vaActiveYear === 'تجريبي') {
+        var testKey = 'test-archive';
+        if (vaCache[testKey]) {
+          vaRenderTestMonths(vaCache[testKey], monthArea); return;
+        }
+        monthArea.innerHTML = '<div class="va-loading">⏳ جارٍ تحميل الأرشيف التجريبي...</div>';
+        fetch(vaBaseUrl() + testKey + '.json')
+          .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+          .then(function(data) { vaCache[testKey] = data; vaRenderTestMonths(data, monthArea); })
+          .catch(function(e) { monthArea.innerHTML = '<div class="va-err">⚠️ تعذّر تحميل الأرشيف التجريبي — ' + escapeHtml(e.message) + '</div>'; });
+        return;
+      }
+
+      // ---- Regular years: use vaIndex ----
       var entries = vaIndex.filter(function(e) { return String(e.year || (e.date || '').slice(0,4)) === vaActiveYear; });
       var monthNums = {};
       entries.forEach(function(e) {
@@ -1293,10 +1310,34 @@
       vaLoadDays(vaActiveYear, vaActiveMonth);
     }
 
+    function vaRenderTestMonths(data, monthArea) {
+      var monthNums = {};
+      data.forEach(function(e) {
+        var m = (e.date || '').slice(5,7);
+        if (m) monthNums[m] = true;
+      });
+      var months = Object.keys(monthNums).sort();
+      if (!months.length) { monthArea.innerHTML = '<div class="va-no-gh">لا توجد تقارير تجريبية</div>'; return; }
+      if (!vaActiveMonth || months.indexOf(vaActiveMonth) === -1) vaActiveMonth = months[months.length - 1];
+      var html = '<div class="va-month-row" id="va-month-row">' + months.map(function(m) {
+        return '<button class="va-month-btn' + (m === vaActiveMonth ? ' active' : '') + '" data-va-month="' + m + '">' + AR_MONTHS_VA[parseInt(m,10)-1] + '</button>';
+      }).join('') + '</div><div id="va-day-area"><div class="va-loading">⏳</div></div>';
+      monthArea.innerHTML = html;
+      document.getElementById('va-month-row').querySelectorAll('.va-month-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          vaActiveMonth = btn.dataset.vaMonth;
+          document.getElementById('va-month-row').querySelectorAll('.va-month-btn').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          vaRenderDays(vaCache['test-archive'], document.getElementById('va-day-area'));
+        });
+      });
+      vaRenderDays(data, document.getElementById('va-day-area'));
+    }
+
     function vaLoadDays(year, month) {
       var dayArea = document.getElementById('va-day-area');
       if (!dayArea) return;
-      var fileKey = year === '2024' ? '2024' : (year + '-' + month);
+      var fileKey = year === 'تجريبي' ? 'test-archive' : (year === '2024' ? '2024' : (year + '-' + month));
       if (vaCache[fileKey]) { vaRenderDays(vaCache[fileKey], dayArea); return; }
       dayArea.innerHTML = '<div class="va-loading">⏳ جارٍ التحميل...</div>';
       fetch(vaBaseUrl() + fileKey + '.json').then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
@@ -1306,9 +1347,9 @@
 
     function vaRenderDays(reports, container) {
       var filtered = reports;
-      if (vaActiveYear === '2024') {
+      if (vaActiveYear === '2024' || vaActiveYear === 'تجريبي') {
         filtered = reports.filter(function(r) {
-          return (r.date||'').slice(0,4) === '2024' && (r.date||'').slice(5,7) === vaActiveMonth;
+          return (r.date||'').slice(5,7) === vaActiveMonth;
         });
       }
       filtered = filtered.slice().sort(function(a,b) { return (a.date||'') < (b.date||'') ? -1 : 1; });
@@ -1322,7 +1363,13 @@
     }
 
     function vaLoadAndShowReport(date) {
-      var fileKey = date.slice(0,4) === '2024' ? '2024' : (date.slice(0,4) + '-' + date.slice(5,7));
+      // Check test-archive cache first
+      var fileKey;
+      if (vaActiveYear === 'تجريبي') {
+        fileKey = 'test-archive';
+      } else {
+        fileKey = date.slice(0,4) === '2024' ? '2024' : (date.slice(0,4) + '-' + date.slice(5,7));
+      }
       var src = vaCache[fileKey];
       if (src) {
         var r = src.filter(function(x) { return (x.date||x.id) === date; })[0];
@@ -1936,8 +1983,9 @@
         '<button type="button" id="hist-search-go">بحث</button>' +
       '</div>' +
       '<div class="hist-year-tabs" id="hist-year-tabs">' +
-        ['2026','2025','2024'].map(function(y) {
-          return '<button class="hist-year-btn' + (y === histActiveYear ? ' active' : '') + '" data-year="' + y + '">' + y + '</button>';
+        ['2026','2025','2024','تجريبي'].map(function(y) {
+          var label = y === 'تجريبي' ? '🧪 تجريبي' : y;
+          return '<button class="hist-year-btn' + (y === histActiveYear ? ' active' : '') + '" data-year="' + y + '">' + label + '</button>';
         }).join('') +
       '</div>' +
       '<div id="hist-months-row" class="hist-months"></div>' +
@@ -1968,6 +2016,22 @@
   function renderHistMonths(year) {
     var row = document.getElementById('hist-months-row');
     if (!row) return;
+
+    // ---- Test archive: load from test-archive.json ----
+    if (year === 'تجريبي') {
+      var testKey = 'test-archive';
+      if (histCache[testKey]) {
+        renderHistTestMonths(histCache[testKey], row); return;
+      }
+      row.innerHTML = '<div class="hist-loading">⏳ جارٍ تحميل الأرشيف التجريبي...</div>';
+      var base = histBaseUrl();
+      if (!base) { row.innerHTML = '<div class="hist-no-gh">⚙️ يرجى ضبط إعدادات GitHub</div>'; return; }
+      fetch(base + testKey + '.json').then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function(data) { histCache[testKey] = data; renderHistTestMonths(data, row); })
+        .catch(function(e) { row.innerHTML = '<div class="hist-no-gh">⚠️ تعذّر تحميل الأرشيف التجريبي</div>'; });
+      return;
+    }
+
     var months = [];
     if (histIndex) {
       var seen = {};
@@ -2000,11 +2064,44 @@
     }
   }
 
+  function renderHistTestMonths(data, row) {
+    var monthNums = {};
+    data.forEach(function(e) {
+      var m = (e.date || '').slice(5,7);
+      if (m) monthNums[m] = true;
+    });
+    var months = Object.keys(monthNums).sort();
+    if (!months.length) { row.innerHTML = '<div class="hist-no-gh">لا توجد تقارير تجريبية</div>'; return; }
+    row.innerHTML = months.map(function(m) {
+      var label = AR_MONTH_NAMES_FULL[parseInt(m,10)-1] || m;
+      var isActive = histActiveMonth === m;
+      return '<button class="hist-month-btn' + (isActive ? ' active' : '') + '" data-month="' + m + '">' + label + '</button>';
+    }).join('');
+    row.querySelectorAll('.hist-month-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        row.querySelectorAll('.hist-month-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        histActiveMonth = btn.dataset.month;
+        loadAndShowMonth('تجريبي', histActiveMonth);
+      });
+    });
+    if (months.length && !histActiveMonth) {
+      var firstBtn = row.querySelector('.hist-month-btn');
+      if (firstBtn) { firstBtn.classList.add('active'); histActiveMonth = months[0]; loadAndShowMonth('تجريبي', months[0]); }
+    }
+  }
+
   function loadAndShowMonth(year, month) {
-    var key = year + '-' + month;
+    var key = year === 'تجريبي' ? 'test-archive' : (year + '-' + month);
     var results = document.getElementById('hist-results-area');
     if (!results) return;
-    if (histCache[key]) { renderHistList(histCache[key], results); return; }
+    if (histCache[key]) {
+      // For test-archive, filter by month
+      var data = key === 'test-archive'
+        ? histCache[key].filter(function(r) { return (r.date||'').slice(5,7) === month; })
+        : histCache[key];
+      renderHistList(data, results); return;
+    }
     results.innerHTML = '<div class="hist-loading">⏳ جارٍ التحميل...</div>';
     var base = histBaseUrl();
     fetch(base + key + '.json').then(function(r) {
@@ -2012,7 +2109,10 @@
       return r.json();
     }).then(function(data) {
       histCache[key] = data;
-      renderHistList(data, results);
+      var toRender = key === 'test-archive'
+        ? data.filter(function(r) { return (r.date||'').slice(5,7) === month; })
+        : data;
+      renderHistList(toRender, results);
     }).catch(function(e) {
       results.innerHTML = '<div class="hist-no-gh">⚠️ تعذّر تحميل بيانات ' + key + '</div>';
     });
